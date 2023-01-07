@@ -34,7 +34,7 @@ namespace pg::detail {
     class sql_type {
         std::reference_wrapper<const T> value;
     public:
-        explicit sql_type(const T& value) : value(value) {}
+        sql_type(const T& value) : value(value) {}
 
         auto get() const noexcept -> const T& {
             return value.get();

@@ -70,6 +70,10 @@ namespace pg {
         );
     }
 
+    auto field::type() const noexcept -> std::int32_t {
+        return column.get().type;
+    }
+
     row::row(
         std::span<const detail::column> columns,
         std::vector<field>&& fields

@@ -49,6 +49,8 @@ namespace pg {
         auto name() const noexcept -> std::string_view;
 
         auto string() const noexcept -> std::optional<std::string_view>;
+
+        auto type() const noexcept -> std::int32_t;
     };
 
     class row {
