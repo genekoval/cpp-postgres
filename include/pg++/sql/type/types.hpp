@@ -1,3 +1,4 @@
+#include "bool.hpp"
 #include "composite.hpp"
 #include "debug.hpp"
 #include "int.hpp"
