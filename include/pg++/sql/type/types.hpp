@@ -5,4 +5,5 @@
 #include "optional.hpp"
 #include "string.hpp"
 #include "tuple.hpp"
+#include "uuid.hpp"
 #include "vector.hpp"
