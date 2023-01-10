@@ -87,8 +87,9 @@ struct fmt::formatter<pg::debug::bytes> {
     ) {
         return format_to(
             ctx.out(),
-            "({:L} bytes) {}",
+            "({:L} byte{}) {}",
             bytes.size(),
+            bytes.size() == 1 ? "" : "s",
             bytes.string()
         );
     }
