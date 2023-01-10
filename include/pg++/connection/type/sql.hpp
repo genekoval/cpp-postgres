@@ -15,7 +15,7 @@ namespace pg::detail {
         if (size == -1) {
             if constexpr (nullable<T>) co_return type::null();
             else {
-                if constexpr (pg::sql_type<T>) {
+                if constexpr (pg::has_typname<T>) {
                     throw bad_conversion(fmt::format(
                         "received NULL when value of type {} was expected",
                         type::name

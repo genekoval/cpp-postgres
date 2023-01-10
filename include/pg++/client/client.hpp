@@ -6,29 +6,6 @@ namespace pg {
     class client final {
         detail::connection_handle connection;
 
-        template <sql_type T>
-        auto get_oid() -> ext::task<std::int32_t> {
-            using type = pg::type<std::remove_cvref_t<T>>;
-
-            if constexpr (std::is_const_v<decltype(type::oid)>) {
-                co_return type::oid;
-            }
-            else {
-                if (type::oid != -1) co_return type::oid;
-
-                TIMBER_DEBUG("Reading OID for type '{}'", type::name);
-
-                type::oid = co_await fetch<std::int32_t>(
-                    "SELECT oid FROM pg_type WHERE typname = $1",
-                    type::name
-                );
-
-                TIMBER_DEBUG("OID for type '{}' is {}", type::name, type::oid);
-
-                co_return type::oid;
-            }
-        }
-
         template <sql_type... Parameters>
         auto deferred_prepare(
             std::string_view name,
@@ -108,6 +85,38 @@ namespace pg {
 
             co_await connection->sync();
             co_return rows;
+        }
+
+        template <sql_type T>
+        auto get_oid() -> ext::task<std::int32_t> {
+            using type = pg::type<std::remove_cvref_t<T>>;
+
+            if constexpr (std::is_const_v<decltype(type::oid)>) {
+                co_return type::oid;
+            }
+            else {
+                if (type::oid != -1) co_return type::oid;
+
+                if constexpr (pg::has_typname<T>) {
+                    TIMBER_DEBUG("Reading OID for type '{}'", type::name);
+
+                    type::oid = co_await fetch<std::int32_t>(
+                        "SELECT oid FROM pg_type WHERE typname = $1",
+                        type::name
+                    );
+
+                    TIMBER_DEBUG(
+                        "OID for type '{}' is {}",
+                        type::name,
+                        type::oid
+                    );
+                }
+                else if (pg::has_oid_query<T>) {
+                    co_await type::oid_query(*this);
+                }
+
+                co_return type::oid;
+            }
         }
 
         auto on_notice(notice_callback_type&& callback) -> void;
