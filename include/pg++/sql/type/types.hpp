@@ -2,6 +2,7 @@
 #include "composite.hpp"
 #include "debug.hpp"
 #include "int.hpp"
+#include "json.hpp"
 #include "optional.hpp"
 #include "string.hpp"
 #include "tuple.hpp"
