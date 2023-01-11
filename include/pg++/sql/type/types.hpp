@@ -6,6 +6,7 @@
 #include "json.hpp"
 #include "optional.hpp"
 #include "string.hpp"
+#include "timestamp.hpp"
 #include "tuple.hpp"
 #include "uuid.hpp"
 #include "vector.hpp"
