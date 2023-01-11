@@ -1,4 +1,5 @@
 #include "bool.hpp"
+#include "bytea.hpp"
 #include "composite.hpp"
 #include "debug.hpp"
 #include "int.hpp"
