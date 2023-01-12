@@ -2,6 +2,7 @@
 #include "bytea.hpp"
 #include "composite.hpp"
 #include "debug.hpp"
+#include "enum.hpp"
 #include "int.hpp"
 #include "json.hpp"
 #include "optional.hpp"
