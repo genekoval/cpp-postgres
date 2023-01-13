@@ -1,6 +1,6 @@
 #pragma once
 
-#include <pg++/connection/connection.hpp>
+#include "portal.hpp"
 
 namespace pg {
     class client final {
@@ -246,5 +246,44 @@ namespace pg {
         auto simple_query(
             std::string_view query
         ) -> ext::task<std::vector<result>>;
+
+        template <typename T, sql_type... Parameters>
+        requires
+            (composite_type<T> || from_sql<T>) &&
+            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto stream(
+            std::string_view query,
+            std::int32_t max_rows,
+            Parameters&&... parameters
+        ) -> ext::task<portal<T>> {
+            co_await prepare<Parameters...>("", query);
+            co_return co_await stream_prepared<T>(
+                "",
+                max_rows,
+                std::forward<Parameters>(parameters)...
+            );
+        }
+
+        template <typename T, sql_type... Parameters>
+        requires
+            (composite_type<T> || from_sql<T>) &&
+            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto stream_prepared(
+            std::string_view statement,
+            std::int32_t max_rows,
+            Parameters&&... parameters
+        ) -> ext::task<portal<T>> {
+            const auto bind = co_await connection->bind(
+                "",
+                statement,
+                format::binary,
+                std::forward<Parameters>(parameters)...
+            );
+
+            co_await connection->flush();
+            co_await bind;
+
+            co_return portal<T>(*connection, "", max_rows);
+        }
     };
 }

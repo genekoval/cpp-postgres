@@ -67,9 +67,6 @@ namespace pg::detail {
 
     auto connection::close_portal(std::string_view name) -> ext::task<> {
         co_await socket.message('C', 'P', name);
-        co_await expect("CloseComplete", '3');
-
-        TIMBER_TRACE(R"(Portal "{}" closed)", name);
     }
 
     auto connection::command_complete() -> ext::task<std::string> {
@@ -357,8 +354,22 @@ namespace pg::detail {
 
     auto connection::sync() -> ext::task<> {
         co_await socket.message('S');
-        co_await expect("ReadyForQuery", 'Z');
-        co_await ready_for_query();
+
+        auto ready = false;
+
+        do {
+            const auto res = co_await read_header();
+
+            switch (res.code) {
+                case '3':
+                    TIMBER_DEBUG("Close Complete");
+                    break;
+                case 'Z':
+                    co_await ready_for_query();
+                    ready = true;
+                    break;
+            }
+        } while (!ready);
     }
 
     auto connection::terminate() -> ext::task<> {
