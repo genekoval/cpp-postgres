@@ -4,6 +4,11 @@
 
 namespace pg {
     class client final {
+        static auto make_function_query(
+            std::string_view function,
+            int arg_count
+        ) -> std::string;
+
         detail::connection_handle connection;
 
         template <sql_type... Parameters>
@@ -26,6 +31,33 @@ namespace pg {
 
         client(std::shared_ptr<detail::connection>&& connection);
 
+        template <sql_type... Parameters>
+        requires ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto exec(
+            std::string_view query,
+            Parameters&&... parameters
+        ) -> ext::task<> {
+            co_await prepare<Parameters...>("", query);
+            co_await exec_prepared("", std::forward<Parameters>(parameters)...);
+        }
+
+        template <sql_type... Parameters>
+        requires ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto exec_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<> {
+            const auto result = co_await query_prepared(
+                statement,
+                std::forward<Parameters>(parameters)...
+            );
+
+            if (!result.empty()) throw unexpected_data(fmt::format(
+                "expected zero rows, received {}",
+                result.size()
+            ));
+        }
+
         template <typename Result, sql_type... Parameters>
         requires
             (composite_type<Result> || from_sql<Result>) &&
@@ -34,20 +66,29 @@ namespace pg {
             std::string_view query,
             Parameters&&... parameters
         ) -> ext::task<Result> {
-            const auto parse = co_await deferred_prepare<Parameters...>(
+            co_await prepare<Parameters...>("", query);
+            co_return co_await fetch_prepared<Result>(
                 "",
-                query
+                std::forward<Parameters>(parameters)...
             );
+        }
 
+        template <typename Result, sql_type... Parameters>
+        requires
+            (composite_type<Result> || from_sql<Result>) &&
+            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto fetch_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<Result> {
             const auto bind = co_await connection->bind(
                 "",
-                "",
+                statement,
                 format::binary,
                 std::forward<Parameters>(parameters)...
             );
 
             co_await connection->flush();
-            co_await parse;
             co_await bind;
 
             auto result = co_await connection->execute<Result>("");
@@ -64,20 +105,29 @@ namespace pg {
             std::string_view query,
             Parameters&&... parameters
         ) -> ext::task<std::vector<T>> {
-            const auto parse = co_await deferred_prepare<Parameters...>(
+            co_await prepare<Parameters...>("", query);
+            co_return co_await fetch_rows_prepared<T>(
                 "",
-                query
+                std::forward<Parameters>(parameters)...
             );
+        }
 
+        template <typename T, sql_type... Parameters>
+        requires
+            (composite_type<T> || from_sql<T>) &&
+            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto fetch_rows_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<std::vector<T>> {
             const auto bind = co_await connection->bind(
                 "",
-                "",
+                statement,
                 format::binary,
                 std::forward<Parameters>(parameters)...
             );
 
             co_await connection->flush();
-            co_await parse;
             co_await bind;
 
             auto rows = std::vector<T>();
@@ -121,7 +171,8 @@ namespace pg {
 
         auto on_notice(notice_callback_type&& callback) -> void;
 
-        template <sql_type... Parameters>
+        template <typename... Parameters>
+        requires (sql_type<Parameters> && ...) || (sizeof...(Parameters) == 0)
         auto prepare(
             std::string_view name,
             std::string_view query
@@ -133,6 +184,18 @@ namespace pg {
 
             co_await connection->flush();
             co_await parse;
+
+            TIMBER_DEBUG("Prepare statement '{}': {}", name, query);
+        }
+
+        template <typename T, typename... Args>
+        requires (sql_type<Args> && ...) || (sizeof...(Args) == 0)
+        auto prepare_fn(
+            std::string_view name,
+            auto (T::*)(Args...)
+        ) -> ext::task<> {
+            const auto query = make_function_query(name, sizeof...(Args));
+            co_await prepare<Args...>(name, query);
         }
 
         template <sql_type... Parameters>
@@ -141,14 +204,22 @@ namespace pg {
             std::string_view query,
             Parameters&&... parameters
         ) -> ext::task<result> {
-            const auto parse = co_await deferred_prepare<Parameters...>(
-                "", // unnamed prepared statement
-                query
+            co_await prepare<Parameters...>("", query);
+            co_return co_await query_prepared(
+                "",
+                std::forward<Parameters>(parameters)...
             );
+        }
 
+        template <sql_type... Parameters>
+        requires (to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0)
+        auto query_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<result> {
             const auto bind = co_await connection->bind(
                 "", // unnamed portal
-                "", // unnamed prepared statement
+                statement,
                 format::text,
                 std::forward<Parameters>(parameters)...
             );
@@ -156,7 +227,6 @@ namespace pg {
             const auto describe = co_await connection->describe("");
 
             co_await connection->flush();
-            co_await parse;
             co_await bind;
 
             auto columns = co_await describe;
@@ -170,7 +240,7 @@ namespace pg {
 
             co_await connection->sync();
 
-            co_return result(*tag, std::move(columns), std::move(rows));
+            co_return result { *tag, std::move(columns), std::move(rows) };
         }
 
         auto simple_query(
