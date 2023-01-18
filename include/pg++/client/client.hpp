@@ -31,6 +31,8 @@ namespace pg {
 
         client(std::shared_ptr<detail::connection>&& connection);
 
+        auto backend_pid() const noexcept -> std::int32_t;
+
         template <sql_type... Parameters>
         requires ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
         auto exec(
@@ -169,6 +171,19 @@ namespace pg {
             }
         }
 
+        auto ignore(
+            const std::unordered_set<std::int32_t>& ignored
+        ) noexcept -> void;
+
+        auto ignore(
+            const std::string& channel,
+            std::int32_t pid
+        ) noexcept -> void;
+
+        auto listen(const std::string& channel) -> ext::task<pg::channel>;
+
+        auto listeners(const std::string& channel) -> long;
+
         auto on_notice(notice_callback_type&& callback) -> void;
 
         template <typename... Parameters>
@@ -185,7 +200,14 @@ namespace pg {
             co_await connection->flush();
             co_await parse;
 
-            TIMBER_DEBUG("Prepare statement '{}': {}", name, query);
+            TIMBER_DEBUG(
+                "Prepare {}: {}",
+                name.empty() ? "unnamed statement" : fmt::format(
+                    "statement '{}'",
+                    name
+                ),
+                query
+            );
         }
 
         template <typename T, typename... Args>
@@ -285,5 +307,16 @@ namespace pg {
 
             co_return portal<T>(*connection, "", max_rows);
         }
+
+        auto unignore() noexcept -> void;
+
+        auto unignore(
+            const std::string& channel,
+            std::int32_t pid
+        ) noexcept -> void;
+
+        auto unlisten() -> ext::task<>;
+
+        auto unlisten(const std::string& channel) -> ext::task<>;
     };
 }

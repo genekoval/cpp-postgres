@@ -1,5 +1,6 @@
 #pragma once
 
+#include "channel.hpp"
 #include "socket.hpp"
 #include "type/enum.hpp"
 #include "type/int.hpp"
@@ -53,11 +54,15 @@ namespace pg::detail {
 
         std::unordered_map<std::string, std::string> backend_parameters;
 
-        notice_callback_type notice_callback;
+        std::unordered_map<std::string, std::weak_ptr<channel>> channels;
+
+        const std::unordered_set<std::int32_t>* ignored = nullptr;
 
         // Newest minor protocol version supported by the server
         // for the major protocol version requested by the client.
         std::int32_t minor_version = 0;
+
+        notice_callback_type notice_callback;
 
         bool open = false;
 
@@ -82,6 +87,8 @@ namespace pg::detail {
         auto backend_key_data() -> ext::task<>;
 
         auto command_complete() -> ext::task<std::string>;
+
+        auto consume_input() -> ext::task<>;
 
         auto data_row(
             std::span<const column> columns
@@ -119,9 +126,9 @@ namespace pg::detail {
 
         auto notice_response() -> ext::task<>;
 
-        auto parameter_status() -> ext::task<>;
+        auto notification_response() -> ext::task<>;
 
-        auto consume_input() -> ext::task<>;
+        auto parameter_status() -> ext::task<>;
 
         auto read_header() -> ext::task<header>;
 
@@ -137,6 +144,10 @@ namespace pg::detail {
             netcore::socket&& socket,
             notice_callback_type&& callback = {}
         );
+
+        ~connection();
+
+        auto backend_pid() const noexcept -> std::int32_t;
 
         template <to_sql... Parameters>
         auto bind(
@@ -166,6 +177,10 @@ namespace pg::detail {
         }
 
         auto cancel() noexcept -> void;
+
+        auto channel(
+            const std::string& name
+        ) const noexcept -> std::shared_ptr<channel>;
 
         auto close_portal(std::string_view name) -> ext::task<>;
 
@@ -261,6 +276,17 @@ namespace pg::detail {
 
         auto flush() -> ext::task<>;
 
+        auto ignore(
+            const std::unordered_set<std::int32_t>* ignored
+        ) noexcept -> void;
+
+        auto listen(
+            const std::string& name,
+            std::weak_ptr<detail::channel>&& channel
+        ) -> void;
+
+        auto listeners(const std::string& channel) -> long;
+
         auto on_notice(notice_callback_type&& callback) -> void;
 
         auto parse(
@@ -274,6 +300,10 @@ namespace pg::detail {
         auto startup_message(const parameter_list& parameters) -> ext::task<>;
 
         auto sync() -> ext::task<>;
+
+        auto unlisten() -> void;
+
+        auto unlisten(const std::string& channel) -> void;
 
         auto wait_for_input() -> ext::task<>;
     };
@@ -298,6 +328,8 @@ namespace pg::detail {
         auto operator*() const noexcept -> connection&;
 
         auto operator->() const noexcept -> connection*;
+
+        auto weak() const noexcept -> std::weak_ptr<connection>;
     };
 
     auto run_connection_task(

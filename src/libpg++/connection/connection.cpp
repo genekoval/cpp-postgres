@@ -2,6 +2,7 @@
 #include <pg++/connection/type/byte.hpp>
 #include <pg++/connection/type/error_fields.hpp>
 #include <pg++/connection/type/int.hpp>
+#include <pg++/connection/type/notification.hpp>
 #include <pg++/connection/type/parameter_list.hpp>
 #include <pg++/connection/type/span.hpp>
 #include <pg++/connection/type/vector.hpp>
@@ -40,6 +41,10 @@ namespace pg::detail {
         socket(std::forward<netcore::socket>(socket))
     {}
 
+    connection::~connection() {
+        unlisten();
+    }
+
     auto connection::authentication() -> ext::task<> {
         const auto auth = co_await socket.read<std::int32_t>();
 
@@ -59,10 +64,22 @@ namespace pg::detail {
         secret = co_await socket.read<std::int32_t>();
     }
 
+    auto connection::backend_pid() const noexcept -> std::int32_t {
+        return pid;
+    }
 
     auto connection::cancel() noexcept -> void {
         open = false;
         socket.cancel();
+    }
+
+    auto connection::channel(
+        const std::string& name
+    ) const noexcept -> std::shared_ptr<detail::channel> {
+        const auto result = channels.find(name);
+
+        if (result == channels.end()) return nullptr;
+        return result->second.lock();
     }
 
     auto connection::close_portal(std::string_view name) -> ext::task<> {
@@ -77,6 +94,9 @@ namespace pg::detail {
         const auto res = co_await socket.read<header>();
 
         switch (res.code) {
+            case 'A':
+                co_await notification_response();
+                break;
             case 'N':
                 co_await notice_response();
                 break;
@@ -212,6 +232,29 @@ namespace pg::detail {
         co_await socket.message('H');
     }
 
+    auto connection::ignore(
+        const std::unordered_set<std::int32_t>* ignored
+    ) noexcept -> void {
+        this->ignored = ignored;
+    }
+
+    auto connection::listen(
+        const std::string& name,
+        std::weak_ptr<detail::channel>&& channel
+    ) -> void {
+        channels.emplace(
+            name,
+            std::forward<std::weak_ptr<detail::channel>>(channel)
+        );
+    }
+
+    auto connection::listeners(const std::string& channel) -> long {
+        auto result = channels.find(channel);
+
+        if (result == channels.end()) return 0;
+        return result->second.use_count();
+    }
+
     auto connection::negotiate_protocol_version() -> ext::task<> {
         minor_version = co_await socket.read<std::int32_t>();
 
@@ -226,6 +269,35 @@ namespace pg::detail {
         auto notice = co_await socket.read<pg::notice>();
         TIMBER_DEBUG("{} {}: {}", *this, notice.severity, notice.message);
         if (notice_callback) co_await notice_callback(std::move(notice));
+    }
+
+    auto connection::notification_response() -> ext::task<> {
+        const auto notif = co_await socket.read<notification>();
+
+        TIMBER_DEBUG(
+            "{} asynchronous notification \"{}\" {}"
+            "received from server process with PID {}",
+            *this,
+            notif.channel,
+            notif.payload.empty() ? "" : fmt::format(
+                R"(with payload "{}" )",
+                notif.payload
+            ),
+            notif.pid
+        );
+
+        if (ignored && ignored->contains(notif.pid)) co_return;
+
+        if (auto chan = channel(notif.channel)) {
+            chan->notify(notif.payload, notif.pid);
+            co_return;
+        }
+
+        TIMBER_WARNING(
+            "{} no listeners registered for channel '{}'",
+            *this,
+            notif.channel
+        );
     }
 
     auto connection::on_notice(notice_callback_type&& callback) -> void {
@@ -377,6 +449,16 @@ namespace pg::detail {
         TIMBER_TRACE("{} terminated connection", *this);
     }
 
+    auto connection::unlisten() -> void {
+        for (const auto& [name, channel] : channels) {
+            if (auto chan = channel.lock()) chan->close();
+        }
+    }
+
+    auto connection::unlisten(const std::string& channel) -> void {
+        channels.erase(channel);
+    }
+
     auto connection::wait_for_input() -> ext::task<> {
         open = true;
 
@@ -416,6 +498,10 @@ namespace pg::detail {
 
     auto connection_handle::operator->() const noexcept -> connection* {
         return conn.get();
+    }
+
+    auto connection_handle::weak() const noexcept -> std::weak_ptr<connection> {
+        return conn;
     }
 
     auto run_connection_task(
