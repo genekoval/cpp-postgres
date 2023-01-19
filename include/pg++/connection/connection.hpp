@@ -82,7 +82,7 @@ namespace pg::detail {
 
         std::optional<std::reference_wrapper<awaitable>> waiter;
 
-        auto authentication() -> ext::task<>;
+        auto authentication(std::string_view password) -> ext::task<>;
 
         auto backend_key_data() -> ext::task<>;
 
@@ -129,6 +129,8 @@ namespace pg::detail {
         auto notification_response() -> ext::task<>;
 
         auto parameter_status() -> ext::task<>;
+
+        auto password_message(std::string_view password) -> ext::task<>;
 
         auto read_header() -> ext::task<header>;
 
@@ -297,7 +299,10 @@ namespace pg::detail {
 
         auto query(std::string_view query) -> ext::task<std::vector<result>>;
 
-        auto startup_message(const parameter_list& parameters) -> ext::task<>;
+        auto startup_message(
+            std::string_view password,
+            const parameter_list& parameters
+        ) -> ext::task<>;
 
         auto sync() -> ext::task<>;
 

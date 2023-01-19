@@ -9,6 +9,7 @@ namespace pg {
     struct parameters {
         std::string host;
         std::optional<std::string> port;
+        std::string password;
         parameter_list params;
     };
 }

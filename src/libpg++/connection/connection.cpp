@@ -45,14 +45,17 @@ namespace pg::detail {
         unlisten();
     }
 
-    auto connection::authentication() -> ext::task<> {
+    auto connection::authentication(std::string_view password) -> ext::task<> {
         const auto auth = co_await socket.read<std::int32_t>();
 
         TIMBER_TRACE("Authentication Code: {}", auth);
 
         switch (auth) {
             case 0:
-                // authentication was successful
+                TIMBER_DEBUG("{} authentication was successful", *this);
+                break;
+            case 3:
+                co_await password_message(password);
                 break;
             default:
                 throw error("authentication method not supported");
@@ -322,6 +325,13 @@ namespace pg::detail {
         co_return defer("ParseComplete", '1');
     }
 
+    auto connection::password_message(
+        std::string_view password
+    ) -> ext::task<> {
+        co_await socket.message('p', password);
+        co_await socket.flush();
+    }
+
     auto connection::query(
         std::string_view query
     ) -> ext::task<std::vector<result>> {
@@ -386,6 +396,7 @@ namespace pg::detail {
     }
 
     auto connection::startup_message(
+        std::string_view password,
         const parameter_list& parameters
     ) -> ext::task<> {
         co_await socket.send(protocol::version, parameters, '\0');
@@ -398,7 +409,7 @@ namespace pg::detail {
 
             switch (res.code) {
                 case 'R':
-                    co_await authentication();
+                    co_await authentication(password);
                     break;
                 case 'v':
                     co_await negotiate_protocol_version();

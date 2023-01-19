@@ -39,7 +39,7 @@ namespace pg {
             )
         );
 
-        co_await connection->startup_message(params.params);
+        co_await connection->startup_message(params.password, params.params);
 
         detail::run_connection_task(connection);
 
