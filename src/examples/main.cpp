@@ -32,16 +32,7 @@ namespace {
         }
 
         auto async_main(example_fn example) -> ext::task<> {
-            const auto params = pg::parameters {
-                .host = "/run/postgresql",
-                .params = {
-                    {"user", "pgtest"},
-                    {"database", "pgtest"}
-                }
-            };
-
-            auto client = co_await pg::connect(params);
-
+            auto client = co_await pg::connect();
             co_await example(client);
         }
 

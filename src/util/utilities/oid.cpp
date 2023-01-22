@@ -1,10 +1,11 @@
 #include "../commands.hpp"
-#include "../connect.hpp"
+
+#include <pg++/pg++>
 
 namespace {
     namespace internal {
         auto async(std::string_view query) -> ext::task<> {
-            auto client = co_await pg::util::connect();
+            auto client = co_await pg::connect();
 
             const auto result = co_await client.query(query);
 

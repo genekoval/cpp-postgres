@@ -72,8 +72,7 @@ class EnumTest : public pg::test::TypeTest {
 protected:
     static auto SetUpTestSuite() -> void {
         netcore::run([]() -> ext::task<> {
-            auto client = pg::client();
-            co_await connect(client);
+            auto client = co_await pg::connect();
 
             co_await client.simple_query(
                 "DROP TYPE IF EXISTS mood;"
