@@ -1,3 +1,4 @@
+#include <dotenv/dotenv>
 #include <filesystem>
 #include <fmt/chrono.h>
 #include <fmt/os.h>
@@ -23,6 +24,8 @@ namespace {
 }
 
 auto main(int argc, char** argv) -> int {
+    dotenv::load();
+
     timber::log_handler = &file_logger;
 
     const auto runtime = netcore::runtime();

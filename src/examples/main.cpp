@@ -1,6 +1,7 @@
 #include "examples.hpp"
 
 #include <commline/commline>
+#include <dotenv/dotenv>
 #include <timber/timber>
 
 using namespace commline;
@@ -69,6 +70,7 @@ namespace {
 
 auto main(int argc, const char** argv) -> int {
     std::locale::global(std::locale(""));
+    dotenv::load();
 
     timber::log_handler = &timber::console_logger;
 

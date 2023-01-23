@@ -4,7 +4,7 @@ summary := An asynchronous PostgreSQL client for C++
 STD := c++20
 
 common.libs := ext++ fmt netcore timber uuid++
-executable.libs := $(project) commline fmt netcore timber
+executable.libs := $(project) commline dotenv fmt netcore timber
 
 library := lib$(project)
 $(library).type := shared
@@ -24,11 +24,12 @@ test.deps := lib$(project)
 test.libs := \
   $(project) \
   $(common.libs) \
+  dotenv \
   gtest
 
 install.directories = $(include)/$(project)
 
-files = $(include) $(src) Makefile Version
+files = $(include) $(src) Makefile VERSION
 
 install := $(library)
 targets := $(install) $(examples) $(utilities)
