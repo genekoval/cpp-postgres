@@ -2,7 +2,7 @@
 
 #include "../sql.hpp"
 
-#include <pg++/client/client.hpp>
+#include <pg++/connection/connection.hpp>
 #include <pg++/connection/type/int.hpp>
 #include <pg++/connection/type/sql.hpp>
 
@@ -13,10 +13,10 @@ namespace pg {
     struct type<std::vector<T>> {
         static inline std::int32_t oid = -1;
 
-        static auto oid_query(client& client) -> ext::task<> {
-            const auto element_type = co_await client.get_oid<T>();
+        static auto oid_query(detail::connection& connection) -> ext::task<> {
+            const auto element_type = co_await connection.get_oid<T>();
 
-            oid = co_await client.fetch<std::int32_t>(
+            oid = co_await connection.fetch<std::int32_t>(
                 "SELECT typarray FROM pg_type WHERE oid = $1",
                 element_type
             );

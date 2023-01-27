@@ -5,11 +5,13 @@
 #include <pg++/except/except.hpp>
 
 namespace pg {
-    class client;
+    namespace detail {
+        class connection;
+    }
 
     template <typename T>
-    concept has_oid_query = requires(pg::client& client) {
-        { type<std::remove_cvref_t<T>>::oid_query(client) } ->
+    concept has_oid_query = requires(detail::connection& connection) {
+        { type<std::remove_cvref_t<T>>::oid_query(connection) } ->
             std::same_as<ext::task<>>;
     };
 

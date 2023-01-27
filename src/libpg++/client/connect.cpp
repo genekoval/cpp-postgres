@@ -23,16 +23,18 @@ namespace pg {
     }
 
     auto connect(const parameters& params) -> ext::task<client> {
-        auto connection = std::shared_ptr<detail::connection>(
-            new detail::connection(
+        auto connection = std::shared_ptr<netcore::mutex<detail::connection>>(
+            new netcore::mutex<detail::connection>(
                 co_await internal::connect(params.host, params.port)
             )
         );
 
-        co_await connection->startup_message(params.password, params.params);
+        co_await connection->get().startup_message(
+            params.password,
+            params.params
+        );
 
         detail::run_connection_task(connection);
-
-        co_return pg::client(std::move(connection));
+        co_return pg::client(connection);
     }
 }

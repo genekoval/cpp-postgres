@@ -147,18 +147,12 @@ namespace pg::detail {
         co_return row(columns, std::move(fields));
     }
 
-    auto connection::defer(std::string_view message, char code) -> ext::task<> {
-        co_await expect(message, code);
-    }
-
     auto connection::describe(
         std::string_view portal
-    ) -> ext::task<ext::task<std::vector<column>>> {
+    ) -> ext::task<std::vector<column>> {
         co_await socket.message('D', 'P', portal);
-        co_return describe_complete();
-    }
+        co_await flush();
 
-    auto connection::describe_complete() -> ext::task<std::vector<column>> {
         const auto res = co_await read_header();
 
         switch (res.code) {
@@ -320,9 +314,10 @@ namespace pg::detail {
         std::string_view name,
         std::string_view query,
         std::span<const std::int32_t> types
-    ) -> ext::task<ext::task<>> {
+    ) -> ext::task<> {
         co_await socket.message('P', name, query, types);
-        co_return defer("ParseComplete", '1');
+        co_await flush();
+        co_await expect("ParseComplete", '1');
     }
 
     auto connection::password_message(
@@ -495,30 +490,32 @@ namespace pg::detail {
         open = false;
     }
 
-    connection_handle::connection_handle(std::shared_ptr<connection>&& conn) :
-        conn(std::forward<std::shared_ptr<connection>>(conn))
+    connection_handle::connection_handle(std::shared_ptr<mutex> conn) :
+        conn(std::move(conn))
     {}
 
     connection_handle::~connection_handle() {
-        if (conn) conn->cancel();
+        if (conn) conn->get().cancel();
     }
 
-    auto connection_handle::operator*() const noexcept -> connection& {
-        return *conn;
+    auto connection_handle::get() const noexcept -> connection& {
+        return conn->get();
+    }
+    auto connection_handle::lock() -> ext::task<guard> {
+        co_return co_await conn->lock();
     }
 
-    auto connection_handle::operator->() const noexcept -> connection* {
-        return conn.get();
+    auto connection_handle::shared() const noexcept -> std::shared_ptr<mutex> {
+        return conn;
     }
 
-    auto connection_handle::weak() const noexcept -> std::weak_ptr<connection> {
+    auto connection_handle::weak() const noexcept -> std::weak_ptr<mutex> {
         return conn;
     }
 
     auto run_connection_task(
-        std::shared_ptr<connection>& conn
+        std::shared_ptr<connection_handle::mutex> conn
     ) -> ext::detached_task {
-        auto copy = conn;
-        co_await copy->wait_for_input();
+        co_await conn->get().wait_for_input();
     }
 }

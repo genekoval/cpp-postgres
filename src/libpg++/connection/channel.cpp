@@ -6,15 +6,19 @@
 namespace pg::detail {
     channel::channel(
         std::string_view name,
-        std::weak_ptr<detail::connection>&& connection
+        std::weak_ptr<netcore::mutex<detail::connection>>&& connection
     ) :
         channel_name(name),
-        connection(std::forward<std::weak_ptr<detail::connection>>(connection))
+        connection(
+            std::forward<std::weak_ptr<netcore::mutex<detail::connection>>>(
+                connection
+            )
+        )
     {}
 
     channel::~channel() {
         if (auto connection = this->connection.lock()) {
-            connection->unlisten(channel_name);
+            connection->get().unlisten(channel_name);
         }
     }
 

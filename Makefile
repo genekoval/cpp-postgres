@@ -20,7 +20,7 @@ $(utilities).type := executable
 $(utilities).deps := $(library)
 $(utilities).libs := $(executable.libs)
 
-test.deps := lib$(project)
+test.deps := $(library)
 test.libs := \
   $(project) \
   $(common.libs) \

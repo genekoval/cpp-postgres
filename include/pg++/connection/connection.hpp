@@ -111,9 +111,9 @@ namespace pg::detail {
             co_return co_await socket.from_sql<T>();
         };
 
-        auto defer(std::string_view message, char code) -> ext::task<>;
-
-        auto describe_complete() -> ext::task<std::vector<column>>;
+        auto describe(
+            std::string_view portal
+        ) -> ext::task<std::vector<column>>;
 
         auto error_response() -> ext::task<sql_error>;
 
@@ -157,7 +157,7 @@ namespace pg::detail {
             std::string_view statement,
             format output,
             Parameters&&... parameters
-        ) -> ext::task<ext::task<>> {
+        ) -> ext::task<> {
             co_await socket.message(
                 'B',
                 portal,
@@ -175,7 +175,8 @@ namespace pg::detail {
                 output
             );
 
-            co_return defer("BindComplete", '2');
+            co_await flush();
+            co_await expect("BindComplete", '2');
         }
 
         auto cancel() noexcept -> void;
@@ -186,9 +187,32 @@ namespace pg::detail {
 
         auto close_portal(std::string_view name) -> ext::task<>;
 
-        auto describe(
-            std::string_view portal
-        ) -> ext::task<ext::task<std::vector<column>>>;
+        template <pg::sql_type... Parameters>
+        requires ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto exec(
+            std::string_view query,
+            Parameters&&... parameters
+        ) -> ext::task<> {
+            co_await prepare<Parameters...>("", query);
+            co_await exec_prepared("", std::forward<Parameters>(parameters)...);
+        }
+
+        template <pg::sql_type... Parameters>
+        requires ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto exec_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<> {
+            const auto result = co_await query_prepared(
+                statement,
+                std::forward<Parameters>(parameters)...
+            );
+
+            if (!result.empty()) throw unexpected_data(fmt::format(
+                "expected zero rows, received {}",
+                result.size()
+            ));
+        }
 
         auto execute(
             std::string_view portal,
@@ -276,7 +300,125 @@ namespace pg::detail {
             } while (true);
         }
 
+        template <pg::sql_type... Parameters>
+        requires (to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0)
+        auto extended_query(
+            std::string_view query,
+            Parameters&&... parameters
+        ) -> ext::task<result> {
+            co_await prepare<Parameters...>("", query);
+            co_return co_await query_prepared(
+                "",
+                std::forward<Parameters>(parameters)...
+            );
+        }
+
+        template <typename Result, pg::sql_type... Parameters>
+        requires
+            (composite_type<Result> || pg::from_sql<Result>) &&
+            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto fetch(
+            std::string_view query,
+            Parameters&&... parameters
+        ) -> ext::task<Result> {
+            co_await prepare<Parameters...>("", query);
+            co_return co_await fetch_prepared<Result>(
+                "",
+                std::forward<Parameters>(parameters)...
+            );
+        }
+
+        template <typename Result, pg::sql_type... Parameters>
+        requires
+            (composite_type<Result> || pg::from_sql<Result>) &&
+            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto fetch_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<Result> {
+            co_await bind(
+                "",
+                statement,
+                format::binary,
+                std::forward<Parameters>(parameters)...
+            );
+
+            auto result = co_await execute<Result>("");
+
+            co_await sync();
+            co_return result;
+        }
+
+        template <typename T, pg::sql_type... Parameters>
+        requires
+            (composite_type<T> || pg::from_sql<T>) &&
+            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto fetch_rows(
+            std::string_view query,
+            Parameters&&... parameters
+        ) -> ext::task<std::vector<T>> {
+            co_await prepare<Parameters...>("", query);
+            co_return co_await fetch_rows_prepared<T>(
+                "",
+                std::forward<Parameters>(parameters)...
+            );
+        }
+
+        template <typename T, pg::sql_type... Parameters>
+        requires
+            (composite_type<T> || pg::from_sql<T>) &&
+            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        auto fetch_rows_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<std::vector<T>> {
+            co_await bind(
+                "",
+                statement,
+                format::binary,
+                std::forward<Parameters>(parameters)...
+            );
+
+            auto rows = std::vector<T>();
+            co_await execute("", std::back_inserter(rows), 0);
+
+            co_await sync();
+            co_return rows;
+        }
+
         auto flush() -> ext::task<>;
+
+        template <pg::sql_type T>
+        auto get_oid() -> ext::task<std::int32_t> {
+            using type = pg::type<std::remove_cvref_t<T>>;
+
+            if constexpr (std::is_const_v<decltype(type::oid)>) {
+                co_return type::oid;
+            }
+            else {
+                if (type::oid != -1) co_return type::oid;
+
+                if constexpr (pg::has_typname<T>) {
+                    TIMBER_DEBUG("Reading OID for type '{}'", type::name);
+
+                    type::oid = co_await fetch<std::int32_t>(
+                        "SELECT oid FROM pg_type WHERE typname = $1",
+                        type::name
+                    );
+
+                    TIMBER_DEBUG(
+                        "OID for type '{}' is {}",
+                        type::name,
+                        type::oid
+                    );
+                }
+                else if (pg::has_oid_query<T>) {
+                    co_await type::oid_query(*this);
+                }
+
+                co_return type::oid;
+            }
+        }
 
         auto ignore(
             const std::unordered_set<std::int32_t>* ignored
@@ -295,9 +437,84 @@ namespace pg::detail {
             std::string_view name,
             std::string_view query,
             std::span<const std::int32_t> types
-        ) -> ext::task<ext::task<>>;
+        ) -> ext::task<>;
+
+        template <typename... Parameters>
+        requires
+            (pg::sql_type<Parameters> && ...) ||
+            (sizeof...(Parameters) == 0)
+        auto prepare(
+            std::string_view name,
+            std::string_view query
+        ) -> ext::task<> {
+            const auto types = std::array<std::int32_t, sizeof...(Parameters)> {
+                co_await get_oid<Parameters>()...
+            };
+
+            co_await parse(name, query, types);
+
+            TIMBER_DEBUG(
+                "{} prepare {}: {}",
+                *this,
+                name.empty() ? "unnamed statement" : fmt::format(
+                    "statement '{}'",
+                    name
+                ),
+                query
+            );
+        }
+
+        template <typename T, typename... Args>
+        requires (pg::sql_type<Args> && ...) || (sizeof...(Args) == 0)
+        auto prepare_fn(
+            std::string_view name,
+            auto (T::*)(Args...)
+        ) -> ext::task<> {
+            constexpr auto arg_count = sizeof...(Args);
+
+            auto os = std::ostringstream();
+
+            os << "SELECT * FROM " << name << "(";
+
+            for (auto i = 1; i <= arg_count; ++i) {
+                os << "$" << i;
+
+                if (i < arg_count) os << ", ";
+            }
+
+            os << ")";
+
+            co_await prepare<Args...>(name, os.str());
+        }
 
         auto query(std::string_view query) -> ext::task<std::vector<result>>;
+
+        template <pg::sql_type... Parameters>
+        requires (to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0)
+        auto query_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<result> {
+            co_await bind(
+                "", // unnamed portal
+                statement,
+                format::text,
+                std::forward<Parameters>(parameters)...
+            );
+
+            auto columns = co_await describe("");
+            auto rows = std::vector<row>();
+
+            const auto tag = co_await execute(
+                "",
+                columns,
+                rows
+            );
+
+            co_await sync();
+
+            co_return result { *tag, std::move(columns), std::move(rows) };
+        }
 
         auto startup_message(
             std::string_view password,
@@ -313,12 +530,15 @@ namespace pg::detail {
         auto wait_for_input() -> ext::task<>;
     };
 
-    class connection_handle final {
-        std::shared_ptr<connection> conn;
+    struct connection_handle final {
+        using mutex = netcore::mutex<connection>;
+        using guard = mutex::guard;
+    private:
+        std::shared_ptr<mutex> conn;
     public:
         connection_handle() = default;
 
-        connection_handle(std::shared_ptr<connection>&& conn);
+        connection_handle(std::shared_ptr<mutex> conn);
 
         connection_handle(const connection_handle&) = delete;
 
@@ -330,15 +550,17 @@ namespace pg::detail {
 
         auto operator=(connection_handle&&) -> connection_handle& = default;
 
-        auto operator*() const noexcept -> connection&;
+        auto get() const noexcept -> connection&;
 
-        auto operator->() const noexcept -> connection*;
+        auto lock() -> ext::task<guard>;
 
-        auto weak() const noexcept -> std::weak_ptr<connection>;
+        auto shared() const noexcept -> std::shared_ptr<mutex>;
+
+        auto weak() const noexcept -> std::weak_ptr<mutex>;
     };
 
     auto run_connection_task(
-        std::shared_ptr<connection>& conn
+        std::shared_ptr<connection_handle::mutex> conn
     ) -> ext::detached_task;
 }
 

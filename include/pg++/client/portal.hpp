@@ -5,14 +5,14 @@
 namespace pg {
     template <typename T>
     class portal {
-        std::reference_wrapper<detail::connection> connection;
+        std::shared_ptr<netcore::mutex<detail::connection>> connection;
         std::string name;
         std::int32_t max_rows;
         std::vector<T> rows;
         std::optional<std::string> tag;
     public:
         portal(
-            detail::connection& connection,
+            std::shared_ptr<netcore::mutex<detail::connection>>&& connection,
             std::string_view name,
             std::int32_t max_rows
         ) :
@@ -39,17 +39,17 @@ namespace pg {
             rows.clear();
             if (done()) co_return rows;
 
-            auto& conn = connection.get();
+            auto connection = co_await this->connection->lock();
 
-            tag = co_await conn.execute(
+            tag = co_await connection->execute(
                 name,
                 std::back_inserter(rows),
                 max_rows
             );
 
             if (done()) {
-                co_await conn.close_portal(name);
-                co_await conn.sync();
+                co_await connection->close_portal(name);
+                co_await connection->sync();
             }
 
             co_return rows;

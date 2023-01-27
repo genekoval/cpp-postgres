@@ -1,38 +1,52 @@
 #include <pg++/client/client.hpp>
 
 namespace pg {
-    client::client(std::shared_ptr<detail::connection>&& connection) :
-        connection(
-            std::forward<std::shared_ptr<detail::connection>>(connection)
+    client::client(
+        std::shared_ptr<netcore::mutex<detail::connection>> connection
+    ) :
+        handle(
+            std::forward<std::shared_ptr<netcore::mutex<detail::connection>>>(
+                connection
+            )
         )
     {}
 
     auto client::backend_pid() const noexcept -> std::int32_t {
-        return connection->backend_pid();
+        return handle.get().backend_pid();
+    }
+
+    auto client::begin() -> ext::task<transaction> {
+        auto connection = co_await handle.lock();
+        co_await connection->exec("BEGIN");
+
+        TIMBER_DEBUG("{} begin transaction", *connection);
+
+        co_return transaction(handle.shared());
     }
 
     auto client::ignore(
         const std::unordered_set<std::int32_t>& ignored
     ) noexcept -> void {
-        connection->ignore(&ignored);
+        handle.get().ignore(&ignored);
     }
 
     auto client::ignore(
         const std::string& channel,
         std::int32_t pid
     ) noexcept -> void {
-        auto chan = connection->channel(channel);
+        auto chan = handle.get().channel(channel);
         if (chan) chan->ignore(pid);
     }
 
     auto client::listen(const std::string& channel) -> ext::task<pg::channel> {
+        auto connection = co_await handle.lock();
         auto chan = connection->channel(channel);
         if (chan) co_return chan;
 
-        co_await exec(fmt::format("LISTEN {}", channel));
+        co_await connection->exec(fmt::format("LISTEN {}", channel));
 
         chan = std::shared_ptr<detail::channel>(
-            new detail::channel(channel, connection.weak())
+            new detail::channel(channel, handle.weak())
         );
 
         connection->listen(channel, chan);
@@ -40,47 +54,29 @@ namespace pg {
     }
 
     auto client::listeners(const std::string& channel) -> long {
-        return connection->listeners(channel);
-    }
-
-    auto client::make_function_query(
-        std::string_view function,
-        int arg_count
-    ) -> std::string {
-        auto os = std::ostringstream();
-
-        os << "SELECT * FROM " << function << "(";
-
-        for (auto i = 1; i <= arg_count; ++i) {
-            os << "$" << i;
-
-            if (i < arg_count) os << ", ";
-        }
-
-        os << ")";
-
-        return os.str();
+        return handle.get().listeners(channel);
     }
 
     auto client::on_notice(notice_callback_type&& callback) -> void {
-        connection->on_notice(std::forward<notice_callback_type>(callback));
+        handle.get().on_notice(std::forward<notice_callback_type>(callback));
     }
 
     auto client::simple_query(
         std::string_view query
     ) -> ext::task<std::vector<result>> {
-        return connection->query(query);
+        auto connection = co_await handle.lock();
+        co_return co_await connection->query(query);
     }
 
     auto client::unignore() noexcept -> void {
-        connection->ignore(nullptr);
+        handle.get().ignore(nullptr);
     }
 
     auto client::unignore(
         const std::string& channel,
         std::int32_t pid
     ) noexcept -> void {
-        auto chan = connection->channel(channel);
+        auto chan = handle.get().channel(channel);
         if (chan) chan->unignore(pid);
     }
 
@@ -89,7 +85,8 @@ namespace pg {
     }
 
     auto client::unlisten(const std::string& channel) -> ext::task<> {
-        co_await exec(fmt::format("UNLISTEN {}", channel));
+        auto connection = co_await handle.lock();
+        co_await connection->exec(fmt::format("UNLISTEN {}", channel));
 
         if (channel == "*") {
             connection->unlisten();
