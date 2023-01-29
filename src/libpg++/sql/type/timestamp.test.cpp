@@ -5,13 +5,15 @@
 #include <sstream>
 
 namespace {
+    using timestamp = std::chrono::system_clock::time_point;
+
     constexpr auto format_string = "%Y-%m-%d %H:%M:%S";
     constexpr auto time_zone = -5;
 }
 
 class TimestampTest : public pg::test::TypeTest {
-    auto format(pg::timestamp ts) -> std::string {
-        const auto time_t = pg::timestamp::clock::to_time_t(ts);
+    auto format(timestamp ts) -> std::string {
+        const auto time_t = timestamp::clock::to_time_t(ts);
         const auto* tm = localtime(&time_t);
 
         auto stream = std::ostringstream();
@@ -20,20 +22,20 @@ class TimestampTest : public pg::test::TypeTest {
         return stream.str();
     }
 
-    auto read(std::string_view timestamp) -> pg::timestamp {
-        auto result = pg::timestamp();
+    auto read(std::string_view string) -> timestamp {
+        auto result = timestamp();
 
         run([&]() -> ext::task<> {
-            result = co_await client.fetch<pg::timestamp>(fmt::format(
+            result = co_await client.fetch<timestamp>(fmt::format(
                 "SELECT '{}'::timestamptz",
-                timestamp
+                string
             ));
         }());
 
         return result;
     }
 
-    auto write(pg::timestamp ts) -> std::string {
+    auto write(timestamp ts) -> std::string {
         auto result = pg::result();
 
         run([&]() -> ext::task<> {
@@ -55,7 +57,7 @@ protected:
         EXPECT_EQ(timestamp, string);
     }
 
-    auto write_time(pg::timestamp ts, std::string_view expected) -> void {
+    auto write_time(timestamp ts, std::string_view expected) -> void {
         const auto result = write(ts);
 
         EXPECT_EQ(expected, result);
@@ -71,7 +73,7 @@ TEST_F(TimestampTest, Write) {
     using std::chrono::sys_days;
 
     const auto date = March / 8 / 2022;
-    const pg::timestamp ts = sys_days{date};
+    const timestamp ts = sys_days{date};
 
     write_time(ts, "2022-03-07 19:00:00-05");
 }
