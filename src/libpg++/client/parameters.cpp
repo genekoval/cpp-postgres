@@ -131,8 +131,8 @@ namespace pg {
         return ::parse(params);
     }
 
-    auto parameters::parse(const parameter_list& params) -> parameters {
-        auto copy = params;
-        return ::parse(copy);
+    auto parameters::parse(parameter_list&& params) -> parameters {
+        auto local = std::forward<parameter_list>(params);
+        return ::parse(local);
     }
 }
