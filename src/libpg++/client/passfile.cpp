@@ -56,7 +56,7 @@ namespace {
             }
             else {
                 result << token;
-                return result.str();
+                break;
             }
         }
 
@@ -70,7 +70,7 @@ namespace pg::detail {
         std::istream& stream
     ) -> std::optional<std::string> {
         for (std::string line; std::getline(stream, line);) {
-            const auto trimmed = ext::trim_right(line);
+            const auto trimmed = ext::trim(line);
 
             if (trimmed.empty() || trimmed.starts_with('#')) continue;
 
