@@ -68,11 +68,11 @@ namespace {
     }
 }
 
-auto main(int argc, const char** argv) -> int {
+auto main(int argc, char** argv) -> int {
     std::locale::global(std::locale(""));
     dotenv::load();
 
-    timber::log_handler = &timber::console_logger;
+    timber::log_handler = &timber::console::logger;
 
     auto app = application(
         "examples",
