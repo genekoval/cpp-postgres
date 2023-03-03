@@ -48,4 +48,8 @@ namespace pg {
     struct unexpected_data : public error {
         using error::error;
     };
+
+    struct unexpected_message : public error {
+        unexpected_message(char c);
+    };
 }

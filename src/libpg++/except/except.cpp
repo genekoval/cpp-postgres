@@ -1,5 +1,7 @@
 #include <pg++/except/except.hpp>
 
+#include <fmt/format.h>
+
 namespace pg {
     error::error(const std::string& message) : std::runtime_error(message) {}
 
@@ -15,4 +17,8 @@ namespace pg {
     auto sql_error::fields() const noexcept -> const error_fields& {
         return _fields;
     }
+
+    unexpected_message::unexpected_message(char c) :
+        error(fmt::format("received unexpected message byte {:x}", c))
+    {}
 }

@@ -161,10 +161,7 @@ namespace pg::detail {
             case 'n':
                 co_return std::vector<column>();
             default:
-                throw error(fmt::format(
-                    "received unexpected message byte '{}'",
-                    res.code
-                ));
+                throw unexpected_message(res.code);
         }
     }
 
@@ -199,10 +196,7 @@ namespace pg::detail {
                     // Empty Query Response
                     co_return std::string();
                 default:
-                    throw error(fmt::format(
-                        "received unexpected message byte '{}'",
-                        res.code
-                    ));
+                    throw unexpected_message(res.code);
             }
         } while (true);
     }

@@ -250,10 +250,7 @@ namespace pg::detail {
                         result.emplace();
                         break;
                     default:
-                        throw error(fmt::format(
-                            "received unexpected message byte '{}'",
-                            res.code
-                        ));
+                        throw unexpected_message(res.code);
                 }
             } while (!done);
 
@@ -292,10 +289,7 @@ namespace pg::detail {
                     case 'I':
                         co_return std::string();
                     default:
-                        throw error(fmt::format(
-                            "received unexpected message byte '{}'",
-                            res.code
-                        ));
+                        throw unexpected_message(res.code);
                 }
             } while (true);
         }
