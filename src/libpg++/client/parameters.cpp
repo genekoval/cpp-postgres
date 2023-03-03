@@ -12,6 +12,136 @@ namespace {
     constexpr auto default_port = "5432";
     constexpr auto socket_file = ".s.PGSQL.5432";
 
+    class parser {
+        using param = std::pair<std::string, std::string>;
+
+        std::string_view str;
+        const char* it;
+        const char* const end;
+
+        parser(std::string_view str) :
+            str(str),
+            it(str.begin()),
+            end(str.end())
+        {}
+
+        auto consume(char expected) -> void {
+            if (it == end) throw std::runtime_error("unexpected EOF");
+
+            const auto c = *it;
+            if (c == expected) {
+                ++it;
+                return;
+            }
+
+            throw std::runtime_error(fmt::format(
+                "unexpected character at byte {}: expected `{}` but got `{}`",
+                it - str.begin(),
+                expected,
+                c
+            ));
+        }
+
+        auto keyword() -> std::optional<std::string> {
+            const auto* start = it;
+
+            while (it != end) {
+                const unsigned char c = *it;
+                if (c == '=' || std::isspace(c)) break;
+
+                ++it;
+            }
+
+            if (start == it) return std::nullopt;
+            return std::string(start, it);
+        }
+
+        auto parameter() -> std::optional<param> {
+            skip_whitespace();
+
+            auto key = keyword();
+            if (!key) return std::nullopt;
+
+            skip_whitespace();
+            consume('=');
+            skip_whitespace();
+
+            return std::optional<param>(
+                std::in_place,
+                std::move(*key),
+                value()
+            );
+        }
+
+        auto quoted_value() -> std::string {
+            consume('\'');
+
+            auto val = std::string();
+
+            while (it != end) {
+                const auto c = *it;
+
+                if (c == '\'') {
+                    consume('\'');
+                    return val;
+                }
+
+                ++it;
+
+                if (c == '\\') {
+                    if (it != end) val.push_back(*it++);
+                }
+                else val.push_back(c);
+            }
+
+            throw std::runtime_error(
+                "unterminated quoted connection parameter value"
+            );
+        }
+
+        auto simple_value() -> std::string {
+            auto val = std::string();
+
+            while (it != end) {
+                const unsigned char c = *it;
+                if (std::isspace(c)) break;
+                ++it;
+
+                if (c == '\\') {
+                    if (it != end) val.push_back(*it++);
+                }
+                else val.push_back(c);
+            }
+
+            return val;
+        }
+
+        auto skip_whitespace() -> void {
+            while (it != end) {
+                if (std::isspace(*it)) ++it;
+                else return;
+            }
+        }
+
+        auto value() -> std::string {
+            if (it == end) throw std::runtime_error("unexpected EOF");
+
+            if (*it == '\'') return quoted_value();
+            else return simple_value();
+        }
+    public:
+        static auto parse(std::string_view str) -> pg::parameter_list {
+            auto parser = ::parser{str};
+            auto params = pg::parameter_list();
+
+            while (auto param = parser.parameter()) {
+                params.insert(std::move(*param));
+            }
+
+            return params;
+        }
+    };
+
     constexpr auto default_host() -> const char* {
         const auto dir = std::string_view(DEFAULT_PGSOCKET_DIR);
         if (dir.empty()) return "localhost";
@@ -134,5 +264,9 @@ namespace pg {
     auto parameters::parse(parameter_list&& params) -> parameters {
         auto local = std::forward<parameter_list>(params);
         return ::parse(local);
+    }
+
+    auto parameters::parse(std::string_view connection_string) -> parameters {
+        return parse(parser::parse(connection_string));
     }
 }

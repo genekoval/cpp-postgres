@@ -24,6 +24,8 @@ namespace pg {
 
         static auto parse(parameter_list&& params) -> parameters;
 
+        static auto parse(std::string_view connection_string) -> parameters;
+
         std::string host;
         std::string port;
         std::string password;
