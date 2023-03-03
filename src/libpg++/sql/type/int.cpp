@@ -7,8 +7,17 @@
         std::int32_t size, \
         pg::reader& reader \
     ) -> ext::task<Type> { \
+        if (size != sizeof(Type)) { \
+            throw bad_conversion(fmt::format(\
+                "unexpected data for int{}: expected {} bytes; received {}", \
+                sizeof(Type) * 8, \
+                sizeof(Type), \
+                size \
+            )); \
+        } \
         Type result = 0; \
         co_await reader.read(&result, sizeof(Type)); \
+        TIMBER_TRACE("read SQL int{}: {}", sizeof(Type) * 8, result); \
         co_return ext::from_be(result); \
     } \
     \

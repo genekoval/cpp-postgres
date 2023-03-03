@@ -16,7 +16,11 @@ namespace pg {
         auto bytes = std::array<unsigned char, UUID::size>();
         co_await reader.read(bytes.data(), bytes.size());
 
-        co_return uuid{bytes};
+        auto result = uuid(bytes);
+
+        TIMBER_TRACE("read SQL uuid: {}", result);
+
+        co_return result;
     }
 
     auto type<uuid>::to_sql(const uuid& id, writer& writer) -> ext::task<> {

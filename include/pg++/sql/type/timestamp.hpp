@@ -3,6 +3,7 @@
 #include "int.hpp"
 
 #include <chrono>
+#include <fmt/chrono.h>
 
 namespace pg::detail {
     constexpr auto epoch_offset = [] {
@@ -42,7 +43,11 @@ namespace pg {
             const auto micros = microseconds(value) + epoch_offset;
             const auto duration = duration_cast<Duration>(micros);
 
-            co_return time_point(duration);
+            auto result = time_point(duration);
+
+            TIMBER_TRACE("read SQL timestamptz: {}", result);
+
+            co_return result;
         }
 
         static auto to_sql(

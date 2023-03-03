@@ -9,6 +9,8 @@ namespace pg {
 
         co_await reader.read(string.data(), size);
 
+        TIMBER_TRACE("read SQL string({}): '{}'", size, string);
+
         co_return string;
     }
 
