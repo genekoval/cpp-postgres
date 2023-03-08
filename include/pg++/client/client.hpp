@@ -155,7 +155,7 @@ namespace pg {
             Parameters&&... parameters
         ) -> ext::task<result> {
             auto connection = co_await handle.lock();
-            co_return co_await connection->extended_query(
+            co_return co_await connection->query_prepared(
                 statement,
                 parameters...
             );
