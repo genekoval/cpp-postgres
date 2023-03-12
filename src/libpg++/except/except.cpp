@@ -18,6 +18,10 @@ namespace pg {
         return _fields;
     }
 
+    auto sql_error::sqlstate(pg::sqlstate sqlstate) const noexcept -> bool {
+        return _fields.sqlstate && *_fields.sqlstate == sqlstate;
+    }
+
     unexpected_message::unexpected_message(char c) :
         error(fmt::format("received unexpected message byte {:x}", c))
     {}

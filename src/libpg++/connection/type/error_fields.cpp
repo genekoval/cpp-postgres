@@ -12,12 +12,14 @@ namespace pg::detail {
 
         const auto read = [&reader]
             <typename T>
-            requires std::same_as<T, std::string> || std::same_as<T, int>
             (T& value) -> ext::task<> {
                 auto string = co_await decoder<std::string>::decode(reader);
 
                 if constexpr (std::same_as<T, std::string>) {
                     value = std::move(string);
+                }
+                else if constexpr (std::same_as<T, std::optional<sqlstate>>) {
+                    value = parse_sqlstate(string);
                 }
                 else {
                     value = std::stoi(string);

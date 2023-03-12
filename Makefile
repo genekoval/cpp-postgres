@@ -8,7 +8,12 @@ executable.libs := $(project) commline dotenv fmt netcore timber
 
 library := lib$(project)
 $(library).type := shared
+$(library).deps = $(errcodes.object)
 $(library).libs := $(common.libs)
+
+gen := codegen
+$(gen).type := executable
+$(gen).libs := commline ext++ fmt
 
 examples := examples
 $(examples).type := executable
@@ -27,11 +32,31 @@ test.libs := \
   dotenv \
   gtest
 
+errcodes.header = $(include)/$(project)/except/errcodes.gen.hpp
+errcodes.source = $(src)/$(library)/except/errcodes.gen.cpp
+errcodes.object = $(obj)/$(library)/except/errcodes.gen.o
+errcodes.options =\
+ --header $(errcodes.header)\
+ --source $(errcodes.source)\
+ $(shell pg_config --sharedir)/errcodes.txt
+
+mk.gen.headers += $(errcodes.header)
+
+CLEAN += $(errcodes.header) $(errcodes.source)
+
 install.directories = $(include)/$(project)
 
 files = $(include) $(src) Makefile VERSION
 
 install := $(library)
-targets := $(install) $(examples) $(utilities)
+targets := $(install) $(gen) $(examples) $(utilities)
 
 include mkbuild/base.mk
+
+$(obj)/$(gen)/main.o: CXXFLAGS +=\
+ -DNAME='"$(gen)"'\
+ -DVERSION='"$(version)"'\
+ -DDESCRIPTION='"code generator for $(project)"'
+
+$(errcodes.source): $($(gen))
+	$($(gen)) errcodes $(errcodes.options)

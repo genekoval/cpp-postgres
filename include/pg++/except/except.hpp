@@ -1,5 +1,7 @@
 #pragma once
 
+#include "errcodes.gen.hpp"
+
 #include <stdexcept>
 
 namespace pg {
@@ -30,7 +32,7 @@ namespace pg {
         std::string routine;
         std::string severity;
         std::string schema;
-        std::string sqlstate;
+        std::optional<sqlstate> sqlstate;
         std::string table;
         std::string where;
     };
@@ -43,6 +45,8 @@ namespace pg {
         sql_error(error_fields&& fields);
 
         auto fields() const noexcept -> const error_fields&;
+
+        auto sqlstate(pg::sqlstate sqlstate) const noexcept -> bool;
     };
 
     struct unexpected_data : public error {
