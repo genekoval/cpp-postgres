@@ -35,6 +35,16 @@ TEST_F(VectorTest, ReadEmpty) {
     }());
 }
 
+TEST_F(VectorTest, ReadNull) {
+    run([&]() -> ext::task<> {
+        const auto result = co_await client.fetch<std::vector<std::int64_t>>(
+            "SELECT NULL::int2[]"
+        );
+
+        EXPECT_TRUE(result.empty());
+    }());
+}
+
 TEST_F(VectorTest, WriteEmpty) {
     run([&]() -> ext::task<> {
         const auto value = std::vector<std::int16_t>();

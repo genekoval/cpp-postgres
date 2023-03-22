@@ -62,9 +62,18 @@ namespace pg {
         static auto size(std::span<const T> span) -> std::int32_t {
             return span::size(span);
         }
+
+        static auto null() noexcept -> std::vector<T> {
+            return std::vector<T>();
+        }
+
+        static constexpr auto is_null(const std::vector<T>&) noexcept -> bool {
+            return false;
+        }
     };
 
     static_assert(sql_type<std::vector<std::int32_t>>);
     static_assert(from_sql<std::vector<std::int32_t>>);
     static_assert(to_sql<std::vector<std::int32_t>>);
+    static_assert(nullable<std::vector<std::int32_t>>);
 }
