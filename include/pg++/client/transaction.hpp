@@ -5,10 +5,12 @@
 namespace pg {
     class transaction {
         std::shared_ptr<netcore::mutex<detail::connection>> handle;
-        bool done = false;
+        bool open = false;
     public:
+        transaction() = default;
+
         explicit transaction(
-            std::shared_ptr<netcore::mutex<detail::connection>> connection
+            std::shared_ptr<netcore::mutex<detail::connection>>&& connection
         );
 
         transaction(const transaction&) = delete;

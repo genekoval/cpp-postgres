@@ -1,11 +1,9 @@
 #include <pg++/client/transaction.hpp>
 
-#include <cassert>
+using handle_t = std::shared_ptr<netcore::mutex<pg::detail::connection>>;
 
 namespace {
-    auto rollback(
-        std::shared_ptr<netcore::mutex<pg::detail::connection>> handle
-    ) -> ext::detached_task {
+    auto rollback(handle_t handle) -> ext::detached_task {
         try {
             auto connection = co_await handle->lock();
             co_await connection->exec("ROLLBACK");
@@ -26,40 +24,44 @@ namespace {
 }
 
 namespace pg {
-    transaction::transaction(
-        std::shared_ptr<netcore::mutex<detail::connection>> connection
-    ) :
-        handle(std::move(connection))
+    transaction::transaction(handle_t&& connection) :
+        handle(std::forward<handle_t>(connection)),
+        open(true)
     {}
 
     transaction::transaction(transaction&& other) :
-        handle(std::move(other.handle))
+        handle(std::move(other.handle)),
+        open(std::exchange(other.open, false))
     {}
 
     transaction::~transaction() {
-        if (handle && !done) ::rollback(std::move(handle));
+        if (handle && open) ::rollback(std::move(handle));
     }
 
     auto transaction::operator=(transaction&& other) -> transaction& {
         handle = std::move(other.handle);
+        open = std::exchange(other.open, false);
+
         return *this;
     }
 
     auto transaction::commit() -> ext::task<> {
-        assert(handle);
-        auto connection = co_await handle->lock();
-        co_await connection->exec("COMMIT");
-        done = true;
+        if (handle && open) {
+            auto connection = co_await handle->lock();
+            co_await connection->exec("COMMIT");
+            open = false;
 
-        TIMBER_DEBUG("{} commit transaction", *connection);
+            TIMBER_DEBUG("{} commit transaction", *connection);
+        }
     }
 
     auto transaction::rollback() -> ext::task<> {
-        assert(handle);
-        auto connection = co_await handle->lock();
-        co_await connection->exec("ROLLBACK");
-        done = true;
+        if (handle && open) {
+            auto connection = co_await handle->lock();
+            co_await connection->exec("ROLLBACK");
+            open = false;
 
-        TIMBER_DEBUG("{} rollback transaction", *connection);
+            TIMBER_DEBUG("{} rollback transaction", *connection);
+        }
     }
 }
