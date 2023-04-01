@@ -15,20 +15,26 @@
                 size \
             )); \
         } \
+\
         Type result = 0; \
         co_await reader.read(&result, sizeof(Type)); \
+        result = ext::from_be(result); \
+\
         TIMBER_TRACE("read SQL int{}: {}", sizeof(Type) * 8, result); \
-        co_return ext::from_be(result); \
+\
+        co_return result; \
     } \
-    \
+\
     auto pg::type<Type>::to_sql( \
         Type i, \
         pg::writer& writer \
     ) -> ext::task<> { \
+        TIMBER_TRACE("write SQL int{}: {}", sizeof(Type) * 8, i); \
+\
         const auto be = ext::to_be(i); \
         co_await writer.write(&be, sizeof(Type)); \
     } \
-    \
+\
     auto pg::type<Type>::size(Type i) -> std::int32_t { \
         return sizeof(Type); \
     }
