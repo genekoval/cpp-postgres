@@ -321,7 +321,26 @@ namespace pg::detail {
         co_await socket.flush();
     }
 
-    auto connection::query(
+    auto connection::read_header() -> ext::task<header> {
+        if (!open) throw broken_connection();
+
+        co_await socket.flush();
+
+        auto waiter = awaitable { .ref = this->waiter };
+        this->waiter = waiter;
+        co_return co_await waiter;
+    }
+
+    auto connection::ready_for_query() -> ext::task<> {
+        const auto status = co_await socket.read<char>();
+        this->status = static_cast<transaction_status>(status);
+    }
+
+    auto connection::row_description() -> ext::task<std::vector<column>> {
+        co_return co_await socket.read<std::vector<column>>();
+    }
+
+    auto connection::simple_query(
         std::string_view query
     ) -> ext::task<std::vector<result>> {
         co_await socket.message('Q', query);
@@ -363,25 +382,6 @@ namespace pg::detail {
         } while (!ready);
 
         co_return results;
-    }
-
-    auto connection::read_header() -> ext::task<header> {
-        if (!open) throw broken_connection();
-
-        co_await socket.flush();
-
-        auto waiter = awaitable { .ref = this->waiter };
-        this->waiter = waiter;
-        co_return co_await waiter;
-    }
-
-    auto connection::ready_for_query() -> ext::task<> {
-        const auto status = co_await socket.read<char>();
-        this->status = static_cast<transaction_status>(status);
-    }
-
-    auto connection::row_description() -> ext::task<std::vector<column>> {
-        co_return co_await socket.read<std::vector<column>>();
     }
 
     auto connection::startup_message(

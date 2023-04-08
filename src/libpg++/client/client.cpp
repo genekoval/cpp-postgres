@@ -65,7 +65,7 @@ namespace pg {
         std::string_view query
     ) -> ext::task<std::vector<result>> {
         auto connection = co_await handle.lock();
-        co_return co_await connection->query(query);
+        co_return co_await connection->simple_query(query);
     }
 
     auto client::unignore() noexcept -> void {
