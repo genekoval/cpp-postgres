@@ -6,7 +6,7 @@ class Portal : public pg::test::ClientTest {
 protected:
     auto run(ext::task<>&& task) -> void {
         pg::test::ClientTest::run([&](ext::task<>&& task) -> ext::task<> {
-            co_await client.simple_query(
+            co_await client->simple_query(
                 "CREATE TEMP TABLE cursor_test (message text);"
                 "INSERT INTO cursor_test VALUES ('foo'), ('bar'), ('baz');"
             );
@@ -17,7 +17,7 @@ protected:
 
 TEST_F(Portal, StreamRows) {
     run([&]() -> ext::task<> {
-        auto portal = co_await client.stream<std::string>(
+        auto portal = co_await client->stream<std::string>(
             "SELECT message FROM cursor_test ORDER BY message",
             2
         );

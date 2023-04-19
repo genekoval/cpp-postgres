@@ -4,7 +4,7 @@ summary := An asynchronous PostgreSQL client for C++
 STD := c++20
 
 common.libs := ext++ fmt netcore timber uuid++
-executable.libs := $(project) commline dotenv fmt netcore timber
+executable.libs := $(project) commline dotenv ext++ fmt netcore timber
 
 library := lib$(project)
 $(library).type := shared

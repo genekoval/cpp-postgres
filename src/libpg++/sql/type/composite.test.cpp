@@ -21,8 +21,9 @@ PGCPP_COMPOSITE_DEFINE(
 
 TEST_F(CompositeTest, ReadComposite) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client
-            .fetch<composite>("SELECT ROW(42::int8, 'hello'::text)");
+        const auto result = co_await client->fetch<composite>(
+            "SELECT ROW(42::int8, 'hello'::text)"
+        );
 
         EXPECT_EQ(42, result.id);
         EXPECT_EQ("hello"sv, result.message);
@@ -31,12 +32,12 @@ TEST_F(CompositeTest, ReadComposite) {
 
 TEST_F(CompositeTest, ReadRow) {
     run([&]() -> ext::task<> {
-        co_await client.simple_query(
+        co_await client->simple_query(
             "CREATE TEMP TABLE composite (id int8, message text);"
             "INSERT INTO composite VALUES (42, 'hello');"
         );
 
-        const auto result = co_await client.fetch<composite>(
+        const auto result = co_await client->fetch<composite>(
             "SELECT * FROM composite"
         );
 
@@ -47,11 +48,11 @@ TEST_F(CompositeTest, ReadRow) {
 
 TEST_F(CompositeTest, WriteComposite) {
     run([&]() -> ext::task<> {
-        co_await client.simple_query(
+        co_await client->simple_query(
             "CREATE TEMP TABLE composite (id int8, message text)"
         );
 
-        const auto result = co_await client.query(
+        const auto result = co_await client->query(
             "SELECT $1",
             composite { .id = 100, .message = "foobar" }
         );

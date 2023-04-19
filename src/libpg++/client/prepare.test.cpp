@@ -25,11 +25,11 @@ namespace {
 
 TEST_F(Prepare, Method) {
     run([&]() -> ext::task<> {
-        co_await client.exec(create_add);
+        co_await client->exec(create_add);
 
-        co_await client.prepare_fn("add", &prepare_test::add);
+        co_await client->prepare_fn("add", &prepare_test::add);
 
-        auto instance = prepare_test(client);
+        auto instance = prepare_test(*client);
         const auto result = co_await instance.add(8, 4);
 
         EXPECT_EQ(12, result);

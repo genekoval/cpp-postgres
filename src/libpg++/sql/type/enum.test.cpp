@@ -51,7 +51,7 @@ class EnumTest : public pg::test::TypeTest {
         auto result = mood::sad;
 
         run([&]() -> ext::task<> {
-            result = co_await client.fetch<mood>(fmt::format(
+            result = co_await client->fetch<mood>(fmt::format(
                 "SELECT '{}'::mood",
                 value
             ));
@@ -64,7 +64,7 @@ class EnumTest : public pg::test::TypeTest {
         auto result = pg::result();
 
         run([&]() -> ext::task<> {
-            result = co_await client.query("SELECT $1", m);
+            result = co_await client->query("SELECT $1", m);
         }());
 
         return std::string{result[0][0].string().value()};

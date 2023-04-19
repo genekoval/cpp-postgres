@@ -8,7 +8,7 @@ namespace {
 
 TEST_F(UuidTest, Read) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.fetch<pg::uuid>(fmt::format(
+        const auto result = co_await client->fetch<pg::uuid>(fmt::format(
             "SELECT '{}'::uuid",
             uuid
         ));
@@ -19,7 +19,7 @@ TEST_F(UuidTest, Read) {
 
 TEST_F(UuidTest, Write) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.query("SELECT $1", uuid);
+        const auto result = co_await client->query("SELECT $1", uuid);
 
         EXPECT_EQ(uuid.string(), result[0][0].string());
     }());

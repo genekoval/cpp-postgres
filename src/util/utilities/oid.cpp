@@ -28,7 +28,7 @@ namespace {
             const commline::app& app,
             std::string_view query
         ) -> void {
-            netcore::async(async(query));
+            netcore::run(async(query));
         }
     }
 }

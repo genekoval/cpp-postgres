@@ -2,6 +2,7 @@
 
 #include <commline/commline>
 #include <dotenv/dotenv>
+#include <netcore/netcore>
 #include <timber/timber>
 
 using namespace commline;

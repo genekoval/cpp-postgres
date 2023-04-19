@@ -18,21 +18,21 @@ protected:
     }
 
     auto insert() -> ext::task<> {
-        co_await client.exec(
+        co_await client->exec(
             "INSERT INTO transaction_test VALUES ($1)",
             value
         );
     }
 
     auto rows() -> ext::task<std::vector<std::int32_t>> {
-        co_return co_await client.fetch_rows<std::int32_t>(
+        co_return co_await client->fetch_rows<std::int32_t>(
             "SELECT num FROM transaction_test"
         );
     }
 
     auto run(ext::task<>&& task) -> void {
         pg::test::ClientTest::run([&](ext::task<>&& task) -> ext::task<> {
-            co_await client.simple_query(
+            co_await client->simple_query(
                 "CREATE TEMP TABLE transaction_test (num int4);"
             );
 
@@ -43,7 +43,7 @@ protected:
 
 TEST_F(Transaction, Commit) {
     run([&]() -> ext::task<> {
-        auto tx = co_await client.begin();
+        auto tx = co_await client->begin();
         co_await insert();
         co_await tx.commit();
 
@@ -53,7 +53,7 @@ TEST_F(Transaction, Commit) {
 
 TEST_F(Transaction, ExplicitRollback) {
     run([&]() -> ext::task<> {
-        auto tx = co_await client.begin();
+        auto tx = co_await client->begin();
         co_await insert();
         co_await tx.rollback();
 
@@ -64,7 +64,7 @@ TEST_F(Transaction, ExplicitRollback) {
 TEST_F(Transaction, DestructorRollback) {
     run([&]() -> ext::task<> {
         {
-            auto tx = co_await client.begin();
+            auto tx = co_await client->begin();
             co_await insert();
         }
 

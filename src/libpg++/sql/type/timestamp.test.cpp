@@ -26,7 +26,7 @@ class TimestampTest : public pg::test::TypeTest {
         auto result = timestamp();
 
         run([&]() -> ext::task<> {
-            result = co_await client.fetch<timestamp>(fmt::format(
+            result = co_await client->fetch<timestamp>(fmt::format(
                 "SELECT '{}'::timestamptz",
                 string
             ));
@@ -39,9 +39,9 @@ class TimestampTest : public pg::test::TypeTest {
         auto result = pg::result();
 
         run([&]() -> ext::task<> {
-            co_await client.query(fmt::format("SET TIME ZONE {}", time_zone));
+            co_await client->query(fmt::format("SET TIME ZONE {}", time_zone));
 
-            result = co_await client.query(
+            result = co_await client->query(
                 "SELECT $1::timestamptz",
                 ts
             );

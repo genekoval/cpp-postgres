@@ -6,7 +6,7 @@ using Query = pg::test::ClientTest;
 
 TEST_F(Query, NoParameters) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.query("SELECT 1 + 1");
+        const auto result = co_await client->query("SELECT 1 + 1");
 
         EXPECT_EQ(1, result.size());
         EXPECT_EQ(1, result[0].size());
@@ -17,7 +17,7 @@ TEST_F(Query, NoParameters) {
 
 TEST_F(Query, OneParameter) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.query("SELECT $1 + 2", 4);
+        const auto result = co_await client->query("SELECT $1 + 2", 4);
 
         EXPECT_EQ(1, result.size());
         EXPECT_EQ(1, result[0].size());
@@ -28,7 +28,7 @@ TEST_F(Query, OneParameter) {
 
 TEST_F(Query, MultipleParameters) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.query(
+        const auto result = co_await client->query(
             "SELECT $1 + $2 AS sum, $3 AS word",
             5,
             10,

@@ -20,7 +20,7 @@ protected:
     auto listen_task() -> ext::detached_task {
         co_await netcore::yield();
 
-        auto channel = co_await client.listen(channel_name);
+        auto channel = co_await client->listen(channel_name);
         listening.emit();
 
         while (true) {
@@ -44,7 +44,7 @@ protected:
             payload.empty() ? "" : fmt::format(", '{}'", payload)
         );
 
-        co_await client.exec(query);
+        co_await client->exec(query);
         co_await netcore::yield();
 
         EXPECT_EQ(notifications, this->notifications);
@@ -63,23 +63,23 @@ TEST_F(Notification, Payload) {
 
 TEST_F(Notification, Ignore) {
     run([&]() -> ext::task<> {
-        const auto pid = client.backend_pid();
+        const auto pid = client->backend_pid();
         const auto ignored = std::unordered_set<std::int32_t> { pid };
 
         co_await listen();
 
         co_await notify(1);
 
-        client.ignore(channel_name, pid);
+        client->ignore(channel_name, pid);
         co_await notify(1);
 
-        client.unignore(channel_name, pid);
+        client->unignore(channel_name, pid);
         co_await notify(2);
 
-        client.ignore(ignored);
+        client->ignore(ignored);
         co_await notify(2);
 
-        client.unignore();
+        client->unignore();
         co_await notify(3);
     }());
 }
@@ -88,11 +88,11 @@ TEST_F(Notification, Unlisten) {
     run([&]() -> ext::task<> {
         co_await listen();
 
-        EXPECT_EQ(1, client.listeners(channel_name));
+        EXPECT_EQ(1, client->listeners(channel_name));
 
-        co_await client.unlisten(channel_name);
+        co_await client->unlisten(channel_name);
         co_await netcore::yield();
 
-        EXPECT_EQ(0, client.listeners(channel_name));
+        EXPECT_EQ(0, client->listeners(channel_name));
     }());
 }

@@ -4,7 +4,7 @@ using VectorTest = pg::test::TypeTest;
 
 TEST_F(VectorTest, ReadValues) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.fetch<std::vector<std::int16_t>>(
+        const auto result = co_await client->fetch<std::vector<std::int16_t>>(
             "SELECT '{1,2,3}'::int2[]"
         );
 
@@ -19,7 +19,7 @@ TEST_F(VectorTest, WriteValues) {
     run([&]() -> ext::task<> {
         const auto value = std::vector<std::int16_t> { 1, 2, 3 };
 
-        const auto result = co_await client.query("SELECT $1", value);
+        const auto result = co_await client->query("SELECT $1", value);
 
         EXPECT_EQ("{1,2,3}", result[0][0].string());
     }());
@@ -27,7 +27,7 @@ TEST_F(VectorTest, WriteValues) {
 
 TEST_F(VectorTest, ReadEmpty) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.fetch<std::vector<std::int16_t>>(
+        const auto result = co_await client->fetch<std::vector<std::int16_t>>(
             "SELECT '{}'::int2[]"
         );
 
@@ -37,7 +37,7 @@ TEST_F(VectorTest, ReadEmpty) {
 
 TEST_F(VectorTest, ReadNull) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.fetch<std::vector<std::int64_t>>(
+        const auto result = co_await client->fetch<std::vector<std::int64_t>>(
             "SELECT NULL::int2[]"
         );
 
@@ -49,7 +49,7 @@ TEST_F(VectorTest, WriteEmpty) {
     run([&]() -> ext::task<> {
         const auto value = std::vector<std::int16_t>();
 
-        const auto result = co_await client.query("SELECT $1", value);
+        const auto result = co_await client->query("SELECT $1", value);
 
         EXPECT_EQ("{}", result[0][0].string());
     }());

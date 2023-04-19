@@ -12,10 +12,10 @@ class ByteaTest : public pg::test::TypeTest {
         auto result = pg::result();
 
         run([&]() -> ext::task<> {
-            co_await client.query("CREATE TEMP TABLE bytea_test (bytes bytea)");
-            co_await client.query("INSERT INTO bytea_test VALUES ($1)", t);
+            co_await client->query("CREATE TEMP TABLE bytea_test (bytes bytea)");
+            co_await client->query("INSERT INTO bytea_test VALUES ($1)", t);
 
-            result = co_await client.query("SELECT * FROM bytea_test");
+            result = co_await client->query("SELECT * FROM bytea_test");
         }());
 
         return result;
@@ -92,7 +92,7 @@ TEST_F(ByteaTest, ConstructByteaEmptySpan) {
 
 TEST_F(ByteaTest, ReadBytea) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.fetch<pg::bytea>(
+        const auto result = co_await client->fetch<pg::bytea>(
             R"(SELECT '\x 68 65 6c 6c 6f'::bytea)"
         );
 
@@ -110,7 +110,7 @@ TEST_F(ByteaTest, ReadBytea) {
 
 TEST_F(ByteaTest, ReadByteaEmpty) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client.fetch<pg::bytea>(
+        const auto result = co_await client->fetch<pg::bytea>(
             R"(SELECT ''::bytea)"
         );
 

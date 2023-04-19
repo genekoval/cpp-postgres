@@ -6,7 +6,7 @@ using SimpleQuery = pg::test::ClientTest;
 
 TEST_F(SimpleQuery, OneStatement) {
     run([&]() -> ext::task<> {
-        const auto results = co_await client.simple_query(
+        const auto results = co_await client->simple_query(
             "SELECT 2 + 2 AS sum"
         );
 
@@ -31,7 +31,7 @@ TEST_F(SimpleQuery, OneStatement) {
 
 TEST_F(SimpleQuery, MultipleStatements) {
     run([&]() -> ext::task<> {
-        const auto results = co_await client.simple_query(
+        const auto results = co_await client->simple_query(
             "SELECT 2 + 2 AS sum;"
             "SELECT 42 AS num, NULL::text AS word"
         );
@@ -74,7 +74,7 @@ TEST_F(SimpleQuery, MultipleStatements) {
 
 TEST_F(SimpleQuery, EmptyStatement) {
     run([&]() -> ext::task<> {
-        const auto results = co_await client.simple_query("");
+        const auto results = co_await client->simple_query("");
 
         EXPECT_EQ(1, results.size());
 

@@ -7,7 +7,7 @@
 namespace pg::test {
     class ClientTest : public testing::Test {
     protected:
-        pg::client client;
+        pg::client* client = nullptr;
 
         auto run(ext::task<>&& task) -> void;
     };

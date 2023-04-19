@@ -63,7 +63,7 @@ namespace {
                 ));
             }
 
-            netcore::async(async_main(result->function));
+            netcore::run(async_main(result->function));
         }
     }
 }
