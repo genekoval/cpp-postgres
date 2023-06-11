@@ -69,3 +69,5 @@ $(obj)/$(gen)/main.o: CXXFLAGS +=\
 
 $(errcodes.source): $($(gen))
 	$($(gen)) errcodes $(errcodes.options)
+
+gen: $(errcodes.source)

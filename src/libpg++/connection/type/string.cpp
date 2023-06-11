@@ -12,7 +12,7 @@ namespace pg::detail {
             const auto data = co_await reader.data();
             const auto* chars = reinterpret_cast<const char*>(data.data());
 
-            auto i = 0;
+            std::size_t i = 0;
 
             while (i < data.size() && !found_null) {
                 if (chars[i++] == '\0') found_null = true;

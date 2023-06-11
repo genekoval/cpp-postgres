@@ -88,7 +88,7 @@ namespace pg {
     }
 
     auto row::operator[](std::string_view name) const -> const field& {
-        for (auto i = 0; i < columns.size(); ++i) {
+        for (std::size_t i = 0; i < columns.size(); ++i) {
             if (columns[i].name == name) return fields[i];
         }
 

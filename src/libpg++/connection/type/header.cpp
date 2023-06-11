@@ -4,10 +4,10 @@
 
 namespace pg::detail {
     auto decoder<header>::decode(reader& reader) -> ext::task<header> {
-        auto result = header {
-            .code = co_await decoder<decltype(header::code)>::decode(reader),
-            .len = co_await decoder<decltype(header::len)>::decode(reader)
-        };
+        auto result = header();
+
+        result.code = co_await decoder<decltype(header::code)>::decode(reader);
+        result.len = co_await decoder<decltype(header::len)>::decode(reader);
 
         TIMBER_TRACE(
             "read header: Byte1('{}') Int32({})",

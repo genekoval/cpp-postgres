@@ -76,7 +76,7 @@ namespace pg::detail {
         socket.cancel();
     }
 
-    auto connection::channel(
+    auto connection::find_channel(
         const std::string& name
     ) const noexcept -> std::shared_ptr<detail::channel> {
         const auto result = channels.find(name);
@@ -279,7 +279,7 @@ namespace pg::detail {
 
         if (ignored && ignored->contains(notif.pid)) co_return;
 
-        if (auto chan = channel(notif.channel)) {
+        if (auto chan = find_channel(notif.channel)) {
             chan->notify(notif.payload, notif.pid);
             co_return;
         }

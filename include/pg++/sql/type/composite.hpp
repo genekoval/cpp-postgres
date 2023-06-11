@@ -6,63 +6,63 @@
 
 #define PGCPP_COMPOSITE_DECL(Type, Name) \
     template <> \
-    struct ::pg::type<Type> { \
-        static inline ::std::int32_t oid = -1; \
-        static constexpr ::std::string_view name = Name; \
+    struct pg::type<Type> { \
+        static inline std::int32_t oid = -1; \
+        static constexpr std::string_view name = Name; \
 \
         static auto from_row( \
-            ::std::int32_t& fields, \
-            ::pg::reader& reader \
-        ) -> ::ext::task<Type>; \
+            std::int32_t& fields, \
+            pg::reader& reader \
+        ) -> ext::task<Type>; \
 \
         static auto from_sql( \
-            ::std::int32_t size, \
-            ::pg::reader& reader \
-        ) -> ::ext::task<Type>; \
+            std::int32_t size, \
+            pg::reader& reader \
+        ) -> ext::task<Type>; \
 \
         static auto to_sql( \
             const Type& t, \
-            ::pg::writer& writer \
+            pg::writer& writer \
         ) -> ext::task<>; \
 \
         static auto size(const Type& t) -> ::std::int32_t; \
     };
 
 #define PGCPP_COMPOSITE_DEFINE(Type, ...) \
-    auto ::pg::type<Type>::from_row( \
-        ::std::int32_t& fields, \
-        ::pg::reader& reader \
-    ) -> ::ext::task<Type> { \
-        co_return co_await ::pg::composite<Type>::from_row( \
+    auto pg::type<Type>::from_row( \
+        std::int32_t& fields, \
+        pg::reader& reader \
+    ) -> ext::task<Type> { \
+        co_return co_await pg::composite<Type>::from_row( \
             fields, \
             reader, \
             __VA_ARGS__ \
         ); \
     } \
 \
-    auto ::pg::type<Type>::from_sql( \
-        ::std::int32_t size, \
-        ::pg::reader& reader \
-    ) -> ::ext::task<Type> { \
-        co_return co_await ::pg::composite<Type>::from_sql( \
+    auto pg::type<Type>::from_sql( \
+        std::int32_t size, \
+        pg::reader& reader \
+    ) -> ext::task<Type> { \
+        co_return co_await pg::composite<Type>::from_sql( \
             reader, \
             __VA_ARGS__ \
         ); \
     } \
 \
-    auto ::pg::type<Type>::to_sql( \
+    auto pg::type<Type>::to_sql( \
         const Type& t, \
-        ::pg::writer& writer \
-    ) -> ::ext::task<> { \
-        co_await ::pg::composite<Type>::to_sql( \
+        pg::writer& writer \
+    ) -> ext::task<> { \
+        co_await pg::composite<Type>::to_sql( \
             t, \
             writer, \
             __VA_ARGS__ \
         ); \
     } \
 \
-    auto ::pg::type<Type>::size(const Type& t) -> ::std::int32_t { \
-        return ::pg::composite<Type>::size( \
+    auto pg::type<Type>::size(const Type& t) -> ::std::int32_t { \
+        return pg::composite<Type>::size( \
             t, \
             __VA_ARGS__ \
         ); \

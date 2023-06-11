@@ -72,7 +72,7 @@ namespace pg::detail {
         // Secret key of this connection's backend.
         std::int32_t secret = 0;
 
-        socket socket;
+        detail::socket socket;
 
         // Current backend transaction status.
         transaction_status status;
@@ -199,14 +199,14 @@ namespace pg::detail {
 
         auto cancel() noexcept -> void;
 
-        auto channel(
+        auto find_channel(
             const std::string& name
-        ) const noexcept -> std::shared_ptr<channel>;
+        ) const noexcept -> std::shared_ptr<detail::channel>;
 
         auto close_portal(std::string_view name) -> ext::task<>;
 
         template <pg::sql_type... Parameters>
-        requires ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        requires ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto exec(
             std::string_view query,
             Parameters&&... parameters
@@ -216,7 +216,7 @@ namespace pg::detail {
         }
 
         template <pg::sql_type... Parameters>
-        requires ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+        requires ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto exec_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -315,7 +315,7 @@ namespace pg::detail {
         template <typename Result, pg::sql_type... Parameters>
         requires
             (composite_type<Result> || pg::from_sql<Result>) &&
-            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto fetch(
             std::string_view query,
             Parameters&&... parameters
@@ -330,7 +330,7 @@ namespace pg::detail {
         template <typename Result, pg::sql_type... Parameters>
         requires
             (composite_type<Result> || pg::from_sql<Result>) &&
-            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto fetch_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -350,7 +350,7 @@ namespace pg::detail {
         template <typename T, pg::sql_type... Parameters>
         requires
             (composite_type<T> || pg::from_sql<T>) &&
-            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto fetch_rows(
             std::string_view query,
             Parameters&&... parameters
@@ -365,7 +365,7 @@ namespace pg::detail {
         template <typename T, pg::sql_type... Parameters>
         requires
             (composite_type<T> || pg::from_sql<T>) &&
-            ((to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0))
+            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto fetch_rows_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -487,7 +487,7 @@ namespace pg::detail {
 
             os << "SELECT * FROM " << name << "(";
 
-            for (auto i = 1; i <= arg_count; ++i) {
+            for (std::size_t i = 1; i <= arg_count; ++i) {
                 os << "$" << i;
 
                 if (i < arg_count) os << ", ";
@@ -499,7 +499,7 @@ namespace pg::detail {
         }
 
         template <pg::sql_type... Parameters>
-        requires (to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0)
+        requires (to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
         auto query(
             std::string_view query,
             Parameters&&... parameters
@@ -512,7 +512,7 @@ namespace pg::detail {
         }
 
         template <pg::sql_type... Parameters>
-        requires (to_sql<Parameters>, ...) || (sizeof...(Parameters) == 0)
+        requires (to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
         auto query_prepared(
             std::string_view statement,
             Parameters&&... parameters

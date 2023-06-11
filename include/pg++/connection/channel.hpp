@@ -12,7 +12,7 @@ namespace pg::detail {
         std::string channel_name;
         netcore::event<std::string> event;
         std::unordered_set<std::int32_t> ignored;
-        std::weak_ptr<netcore::mutex<connection>> connection;
+        std::weak_ptr<netcore::mutex<detail::connection>> connection;
     public:
         channel() = default;
 

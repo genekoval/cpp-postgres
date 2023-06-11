@@ -6,10 +6,12 @@ namespace pg::detail {
     auto decoder<notification>::decode(
         reader& reader
     ) -> ext::task<notification> {
-        co_return notification {
-            .pid = co_await decoder<std::int32_t>::decode(reader),
-            .channel = co_await decoder<std::string>::decode(reader),
-            .payload = co_await decoder<std::string>::decode(reader)
-        };
+        auto notif = notification();
+
+        notif.pid = co_await decoder<std::int32_t>::decode(reader);
+        notif.channel = co_await decoder<std::string>::decode(reader);
+        notif.payload = co_await decoder<std::string>::decode(reader);
+
+        co_return notif;
     }
 }

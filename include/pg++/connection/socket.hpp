@@ -12,8 +12,8 @@ namespace pg::detail {
         friend struct fmt::formatter<pg::detail::socket>;
 
         netcore::socket inner;
-        reader reader;
-        writer writer;
+        pg::reader reader;
+        pg::writer writer;
     public:
         template <typename... Args>
         socket(Args&&... args) :

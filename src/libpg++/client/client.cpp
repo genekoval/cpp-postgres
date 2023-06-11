@@ -34,13 +34,13 @@ namespace pg {
         const std::string& channel,
         std::int32_t pid
     ) noexcept -> void {
-        auto chan = handle.get().channel(channel);
+        auto chan = handle.get().find_channel(channel);
         if (chan) chan->ignore(pid);
     }
 
     auto client::listen(const std::string& channel) -> ext::task<pg::channel> {
         auto connection = co_await handle.lock();
-        auto chan = connection->channel(channel);
+        auto chan = connection->find_channel(channel);
         if (chan) co_return chan;
 
         co_await connection->exec(fmt::format("LISTEN {}", channel));
@@ -76,7 +76,7 @@ namespace pg {
         const std::string& channel,
         std::int32_t pid
     ) noexcept -> void {
-        auto chan = handle.get().channel(channel);
+        auto chan = handle.get().find_channel(channel);
         if (chan) chan->unignore(pid);
     }
 
@@ -93,7 +93,7 @@ namespace pg {
             co_return;
         }
 
-        auto chan = connection->channel(channel);
+        auto chan = connection->find_channel(channel);
         if (chan) chan->close();
     }
 }

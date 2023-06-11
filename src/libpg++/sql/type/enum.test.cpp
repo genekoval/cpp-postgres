@@ -39,6 +39,8 @@ struct pg::enum_type<mood> {
             case ok: return "ok";
             case happy: return "happy";
         }
+
+        return "<invalid mood>";
     }
 };
 

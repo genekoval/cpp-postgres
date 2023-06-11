@@ -52,10 +52,8 @@ TEST_F(CompositeTest, WriteComposite) {
             "CREATE TEMP TABLE composite (id int8, message text)"
         );
 
-        const auto result = co_await client->query(
-            "SELECT $1",
-            composite { .id = 100, .message = "foobar" }
-        );
+        const auto comp = composite { 100, "foobar" };
+        const auto result = co_await client->query("SELECT $1", comp);
 
         EXPECT_EQ("(100,foobar)"sv, result[0][0].string());
     }());

@@ -32,7 +32,7 @@ namespace pg {
         std::string routine;
         std::string severity;
         std::string schema;
-        std::optional<sqlstate> sqlstate;
+        std::optional<pg::sqlstate> sqlstate;
         std::string table;
         std::string where;
     };
