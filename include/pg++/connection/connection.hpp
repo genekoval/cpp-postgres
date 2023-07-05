@@ -10,6 +10,8 @@
 
 #include <pg++/except/except.hpp>
 #include <pg++/result/result.hpp>
+#include <pg++/sql/type/int.hpp>
+#include <pg++/sql/type/string.hpp>
 
 namespace pg {
     enum class format : std::int16_t {
@@ -401,10 +403,38 @@ namespace pg::detail {
                 if constexpr (pg::has_typname<T>) {
                     TIMBER_DEBUG("Reading OID for type '{}'", type::name);
 
-                    type::oid = co_await fetch<std::int32_t>(
-                        "SELECT oid FROM pg_type WHERE typname = $1",
-                        type::name
-                    );
+                    const auto name = std::string_view { type::name };
+                    const auto delimiter = name.find(".");
+
+                    if (delimiter == std::string_view::npos) {
+                        try {
+                            type::oid = co_await fetch<std::int32_t>(
+                                "SELECT oid FROM pg_type WHERE typname = $1",
+                                type::name
+                            );
+                        }
+                        catch (const unexpected_data&) {
+                            throw unexpected_data(fmt::format(
+                                "Failed to read OID: Type '{}' is ambiguous",
+                                type::name
+                            ));
+                        }
+                    }
+                    else {
+                        type::oid = co_await fetch<std::int32_t>(
+                            "SELECT oid "
+                            "FROM pg_type "
+                            "WHERE "
+                                "typname = $1 AND "
+                                "typnamespace = ("
+                                    "SELECT oid "
+                                    "FROM pg_namespace "
+                                    "WHERE nspname = $2"
+                                ")",
+                            name.substr(delimiter + 1),
+                            name.substr(0, delimiter)
+                        );
+                    }
 
                     TIMBER_DEBUG(
                         "OID for type '{}' is {}",
