@@ -11,7 +11,7 @@ namespace pg::detail {
 
         static auto encode(
             std::span<const T> span,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<> {
             co_await encoder<size_type>::encode(span.size(), writer);
 
@@ -37,7 +37,7 @@ namespace pg::detail {
 
         static auto encode(
             std::span<const std::byte> bytes,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<> {
             co_await encoder<size_type>::encode(bytes.size(), writer);
             co_await writer.write(bytes.data(), bytes.size());

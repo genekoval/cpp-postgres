@@ -5,7 +5,9 @@
 namespace pg::detail {
     template <decodable T>
     struct decoder<std::vector<T>> {
-        static auto decode(reader& reader) -> ext::task<std::vector<T>> {
+        static auto decode(
+            netcore::buffered_socket& reader
+        ) -> ext::task<std::vector<T>> {
             const auto size = co_await decoder<std::int16_t>::decode(reader);
 
             auto result = std::vector<T>();

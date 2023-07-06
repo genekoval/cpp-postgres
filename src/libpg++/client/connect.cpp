@@ -1,9 +1,14 @@
 #include <pg++/client/connect.hpp>
 
+#include <ext/data_size.h>
 #include <filesystem>
+
+using namespace ext::literals;
 
 namespace {
     namespace internal {
+        constexpr auto default_buffer_size = 8_KiB;
+
         auto connect(
             std::string_view host,
             std::string_view port
@@ -23,9 +28,17 @@ namespace pg {
     }
 
     auto connect(const parameters& params) -> ext::task<client> {
+        return connect(params, internal::default_buffer_size);
+    }
+
+    auto connect(
+        const parameters& params,
+        std::size_t buffer_size
+    ) -> ext::task<client> {
         auto connection = std::shared_ptr<netcore::mutex<detail::connection>>(
             new netcore::mutex<detail::connection>(
-                co_await internal::connect(params.host, params.port)
+                co_await internal::connect(params.host, params.port),
+                buffer_size
             )
         );
 

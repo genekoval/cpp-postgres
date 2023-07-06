@@ -6,7 +6,7 @@
 
 namespace pg::detail {
     template <pg::from_sql T>
-    auto from_sql(reader& reader) -> ext::task<T> {
+    auto from_sql(netcore::buffered_socket& reader) -> ext::task<T> {
         using type = type<std::remove_cvref_t<T>>;
 
         const auto size =
@@ -43,7 +43,10 @@ namespace pg::detail {
 
     template <to_sql T>
     struct encoder<sql_type<T>> {
-        static auto encode(sql_type<T> t, writer& writer) -> ext::task<> {
+        static auto encode(
+            sql_type<T> t,
+            netcore::buffered_socket& writer
+        ) -> ext::task<> {
             using size_encoder = detail::encoder<std::int32_t>;
 
             const auto& value = t.get();

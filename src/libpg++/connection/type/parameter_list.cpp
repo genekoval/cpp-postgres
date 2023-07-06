@@ -4,8 +4,8 @@
 
 namespace pg::detail {
     auto encoder<parameter_list>::encode(
-            const parameter_list& parameters,
-            writer& writer
+        const parameter_list& parameters,
+        netcore::buffered_socket& writer
     ) -> ext::task<> {
         for (const auto& [key, value] : parameters) {
             co_await encoder<std::string>::encode(key, writer);

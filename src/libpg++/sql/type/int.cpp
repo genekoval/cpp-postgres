@@ -5,7 +5,7 @@
 #define INT_IMPL(Type) \
     auto pg::type<Type>::from_sql( \
         std::int32_t size, \
-        pg::reader& reader \
+        netcore::buffered_socket& reader \
     ) -> ext::task<Type> { \
         if (size != sizeof(Type)) { \
             throw bad_conversion(fmt::format(\
@@ -27,7 +27,7 @@
 \
     auto pg::type<Type>::to_sql( \
         Type i, \
-        pg::writer& writer \
+        netcore::buffered_socket& writer \
     ) -> ext::task<> { \
         TIMBER_TRACE("write SQL int{}: {}", sizeof(Type) * 8, i); \
 \

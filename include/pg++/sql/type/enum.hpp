@@ -12,12 +12,12 @@
 \
         static auto from_sql( \
             std::int32_t size, \
-            pg::reader& reader \
+            netcore::buffered_socket& reader \
         ) -> ext::task<Type>; \
 \
         static auto to_sql( \
             Type t, \
-            pg::writer& writer \
+            netcore::buffered_socket& writer \
         ) -> ext::task<>; \
 \
         static auto size(Type t) -> std::int32_t; \
@@ -26,7 +26,7 @@
 #define PG_ENUM_DEFINE(Type) \
     auto pg::type<Type>::from_sql( \
         std::int32_t size, \
-        pg::reader& reader \
+        netcore::buffered_socket& reader \
     ) -> ext::task<Type> { \
         const auto string = co_await pg::type<std::string>::from_sql( \
             size, \
@@ -37,7 +37,7 @@
 \
     auto pg::type<Type>::to_sql( \
         Type t, \
-        pg::writer& writer \
+        netcore::buffered_socket& writer \
     ) -> ext::task<> { \
         const auto string = pg::enum_type<Type>::to_string(t); \
         co_await pg::type<std::string_view>::to_sql(string, writer); \

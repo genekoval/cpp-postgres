@@ -3,7 +3,7 @@
 namespace pg {
     auto type<uuid>::from_sql(
         std::int32_t size,
-        reader& reader
+        netcore::buffered_socket& reader
     ) -> ext::task<uuid> {
         if (size != UUID::size) {
             throw bad_conversion(fmt::format(
@@ -23,7 +23,10 @@ namespace pg {
         co_return result;
     }
 
-    auto type<uuid>::to_sql(const uuid& id, writer& writer) -> ext::task<> {
+    auto type<uuid>::to_sql(
+        const uuid& id,
+        netcore::buffered_socket& writer
+    ) -> ext::task<> {
         const auto bytes = id.bytes();
         co_await writer.write(bytes.data(), bytes.size());
     }

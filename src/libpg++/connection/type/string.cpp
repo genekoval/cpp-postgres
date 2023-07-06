@@ -3,14 +3,15 @@
 
 namespace pg::detail {
     auto decoder<std::string>::decode(
-        reader& reader
+        netcore::buffered_socket& reader
     ) -> ext::task<std::string> {
         auto string = std::string();
         auto found_null = false;
 
         do {
-            const auto data = co_await reader.data();
-            const auto* chars = reinterpret_cast<const char*>(data.data());
+            const auto data = co_await reader.peek();
+            const auto* const chars =
+                reinterpret_cast<const char*>(data.data());
 
             std::size_t i = 0;
 
@@ -19,7 +20,7 @@ namespace pg::detail {
             }
 
             string.append(chars, i - 1);
-            reader.advance(i);
+            reader.consume(i);
         } while (!found_null);
 
         TIMBER_TRACE(R"(read String("{}"))", string);
@@ -29,7 +30,7 @@ namespace pg::detail {
 
     auto encoder<std::string>::encode(
         std::string_view string,
-        writer& writer
+        netcore::buffered_socket& writer
     ) -> ext::task<> {
         return encoder<std::string_view>::encode(string, writer);
     }
@@ -40,7 +41,7 @@ namespace pg::detail {
 
     auto encoder<std::string_view>::encode(
         std::string_view string,
-        writer& writer
+        netcore::buffered_socket& writer
     ) -> ext::task<> {
         constexpr auto null = '\0';
 

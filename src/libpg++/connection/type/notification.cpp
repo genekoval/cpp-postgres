@@ -4,7 +4,7 @@
 
 namespace pg::detail {
     auto decoder<notification>::decode(
-        reader& reader
+        netcore::buffered_socket& reader
     ) -> ext::task<notification> {
         auto notif = notification();
 

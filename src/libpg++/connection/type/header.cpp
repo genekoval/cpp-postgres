@@ -3,7 +3,9 @@
 #include <pg++/connection/type/int.hpp>
 
 namespace pg::detail {
-    auto decoder<header>::decode(reader& reader) -> ext::task<header> {
+    auto decoder<header>::decode(
+        netcore::buffered_socket& reader
+    ) -> ext::task<header> {
         auto result = header();
 
         result.code = co_await decoder<decltype(header::code)>::decode(reader);

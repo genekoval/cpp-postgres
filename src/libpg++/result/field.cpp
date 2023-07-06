@@ -27,7 +27,9 @@ namespace pg::detail {
         return _size;
     }
 
-    auto decoder<field_data>::decode(reader& reader) -> ext::task<field_data> {
+    auto decoder<field_data>::decode(
+        netcore::buffered_socket& reader
+    ) -> ext::task<field_data> {
         const auto size = co_await decoder<std::int32_t>::decode(reader);
 
         if (size == -1) co_return field_data();

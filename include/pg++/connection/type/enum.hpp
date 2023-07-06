@@ -8,7 +8,10 @@ namespace pg::detail {
         std::is_enum_v<T> &&
         encodable<std::underlying_type_t<T>>
     struct encoder<T> {
-        static auto encode(T t, writer& writer) -> ext::task<> {
+        static auto encode(
+            T t,
+            netcore::buffered_socket& writer
+        ) -> ext::task<> {
             using underlying = std::underlying_type_t<T>;
 
             co_await encoder<underlying>::encode(

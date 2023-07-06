@@ -12,17 +12,17 @@
 \
         static auto from_row( \
             std::int32_t& fields, \
-            pg::reader& reader \
+            netcore::buffered_socket& reader \
         ) -> ext::task<Type>; \
 \
         static auto from_sql( \
             std::int32_t size, \
-            pg::reader& reader \
+            netcore::buffered_socket& reader \
         ) -> ext::task<Type>; \
 \
         static auto to_sql( \
             const Type& t, \
-            pg::writer& writer \
+            netcore::buffered_socket& writer \
         ) -> ext::task<>; \
 \
         static auto size(const Type& t) -> ::std::int32_t; \
@@ -31,7 +31,7 @@
 #define PGCPP_COMPOSITE_DEFINE(Type, ...) \
     auto pg::type<Type>::from_row( \
         std::int32_t& fields, \
-        pg::reader& reader \
+        netcore::buffered_socket& reader \
     ) -> ext::task<Type> { \
         co_return co_await pg::composite<Type>::from_row( \
             fields, \
@@ -42,7 +42,7 @@
 \
     auto pg::type<Type>::from_sql( \
         std::int32_t size, \
-        pg::reader& reader \
+        netcore::buffered_socket& reader \
     ) -> ext::task<Type> { \
         co_return co_await pg::composite<Type>::from_sql( \
             reader, \
@@ -52,7 +52,7 @@
 \
     auto pg::type<Type>::to_sql( \
         const Type& t, \
-        pg::writer& writer \
+        netcore::buffered_socket& writer \
     ) -> ext::task<> { \
         co_await pg::composite<Type>::to_sql( \
             t, \
@@ -76,7 +76,7 @@ namespace pg {
             T& t,
             std::int32_t oid,
             std::int32_t& fields,
-            reader& reader,
+            netcore::buffered_socket& reader,
             Type Base::* member
         ) -> ext::task<> {
             t.*member = co_await detail::from_sql<Type>(reader);
@@ -86,7 +86,7 @@ namespace pg {
         static auto read_member(
             T& t,
             std::int32_t& fields,
-            reader& reader,
+            netcore::buffered_socket& reader,
             Type Base::* member
         ) -> ext::task<> {
             const auto oid =
@@ -98,7 +98,7 @@ namespace pg {
         template <typename Type, typename Base>
         static auto write_member(
             const T& t,
-            writer& writer,
+            netcore::buffered_socket& writer,
             Type Base::* member
         ) -> ext::task<> {
             co_await detail::encoder<std::int32_t>::encode(
@@ -123,7 +123,7 @@ namespace pg {
         template <typename... Members>
         static auto from_row(
             std::int32_t& fields,
-            reader& reader,
+            netcore::buffered_socket& reader,
             Members... members
         ) -> ext::task<T> {
             auto result = T();
@@ -135,7 +135,7 @@ namespace pg {
 
         template <typename... Members>
         static auto from_sql(
-            reader& reader,
+            netcore::buffered_socket& reader,
             Members... members
         ) -> ext::task<T> {
             auto result = T();
@@ -150,7 +150,7 @@ namespace pg {
         template <typename... Members>
         static auto to_sql(
             const T& t,
-            writer& writer,
+            netcore::buffered_socket& writer,
             Members... members
         ) -> ext::task<> {
             co_await detail::encoder<std::int32_t>::encode(

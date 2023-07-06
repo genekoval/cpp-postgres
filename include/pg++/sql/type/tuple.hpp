@@ -13,7 +13,7 @@ namespace pg {
             T& t,
             std::int32_t oid,
             std::int32_t& fields,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<> {
             if (fields == 0) throw unexpected_data("missing field");
             --fields;
@@ -25,7 +25,7 @@ namespace pg {
         static auto read_field(
             T& t,
             std::int32_t& fields,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<> {
             const auto oid =
                 co_await detail::decoder<std::int32_t>::decode(reader);
@@ -38,7 +38,7 @@ namespace pg {
             std::index_sequence<I...>,
             std::tuple<Types...>& tuple,
             std::int32_t& fields,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<> {
             (co_await read_field(std::get<I>(tuple), fields, reader), ...);
         }
@@ -48,14 +48,14 @@ namespace pg {
             std::index_sequence<I...>,
             std::tuple<Types...>& tuple,
             std::int32_t& fields,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<> {
             (co_await read_field(std::get<I>(tuple), 0, fields, reader), ...);
         }
     public:
         static auto from_row(
             std::int32_t& fields,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<std::tuple<Types...>> {
             auto result = std::tuple<Types...>();
 
@@ -71,7 +71,7 @@ namespace pg {
 
         static auto from_sql(
             std::int32_t size,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<std::tuple<Types...>> {
             auto result = std::tuple<Types...>();
             auto fields =

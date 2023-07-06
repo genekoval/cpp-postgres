@@ -35,10 +35,11 @@ namespace pg::detail {
 
     connection::connection(
         netcore::socket&& socket,
+        std::size_t buffer_size,
         notice_callback_type&& callback
     ) :
         notice_callback(std::forward<notice_callback_type>(callback)),
-        socket(std::forward<netcore::socket>(socket))
+        socket(std::forward<netcore::socket>(socket), buffer_size)
     {}
 
     connection::~connection() {

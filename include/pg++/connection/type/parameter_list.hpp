@@ -12,7 +12,7 @@ namespace pg::detail {
     struct encoder<parameter_list> {
         static auto encode(
             const parameter_list& parameters,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<>;
 
         static auto size(const parameter_list& parameters) -> std::int32_t;

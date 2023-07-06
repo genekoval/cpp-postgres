@@ -10,10 +10,13 @@ namespace pg {
 
         static auto from_sql(
             std::int32_t size,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<bool>;
 
-        static auto to_sql(bool b, writer& writer) -> ext::task<>;
+        static auto to_sql(
+            bool b,
+            netcore::buffered_socket& writer
+        ) -> ext::task<>;
 
         static constexpr auto size(bool b) -> std::int32_t {
             return sizeof(bool);

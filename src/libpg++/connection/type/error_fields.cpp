@@ -4,7 +4,7 @@
 
 namespace pg::detail {
     auto decoder<error_fields>::decode(
-        reader& reader
+        netcore::buffered_socket& reader
     ) -> ext::task<error_fields> {
         auto fields = error_fields();
 

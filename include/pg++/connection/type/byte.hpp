@@ -6,12 +6,15 @@
 namespace pg::detail {
     template <>
     struct decoder<char> {
-        static auto decode(reader& reader) -> ext::task<char>;
+        static auto decode(netcore::buffered_socket& reader) -> ext::task<char>;
     };
 
     template <>
     struct encoder<char> {
-        static auto encode(char c, writer& writer) -> ext::task<>;
+        static auto encode(
+            char c,
+            netcore::buffered_socket& writer
+        ) -> ext::task<>;
 
         static auto size(char c) -> std::int32_t;
     };

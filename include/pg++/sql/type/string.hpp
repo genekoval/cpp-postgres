@@ -10,12 +10,12 @@ namespace pg {
 
         static auto from_sql(
             std::int32_t size,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<std::string>;
 
         static auto to_sql(
             std::string_view string,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<>;
 
         static auto size(std::string_view string) -> std::int32_t;
@@ -32,7 +32,7 @@ namespace pg {
 
         static auto to_sql(
             std::string_view string,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<>;
 
         static auto size(std::string_view string) -> std::int32_t;
@@ -48,7 +48,7 @@ namespace pg {
 
         static auto to_sql(
             const char* string,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<>;
 
         static auto size(const char* string) -> std::int32_t;
@@ -64,7 +64,7 @@ namespace pg {
 
         static auto to_sql(
             const char* string,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<> {
             co_await type<std::string_view>::to_sql(string, writer);
         }

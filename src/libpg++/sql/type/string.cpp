@@ -3,7 +3,7 @@
 namespace pg {
     auto type<std::string>::from_sql(
         std::int32_t size,
-        reader& reader
+        netcore::buffered_socket& reader
     ) -> ext::task<std::string> {
         auto string = std::string(size, '\0');
 
@@ -16,7 +16,7 @@ namespace pg {
 
     auto type<std::string>::to_sql(
         std::string_view string,
-        writer& writer
+        netcore::buffered_socket& writer
     ) -> ext::task<> {
         return type<std::string_view>::to_sql(string, writer);
     }
@@ -27,7 +27,7 @@ namespace pg {
 
     auto type<std::string_view>::to_sql(
         std::string_view string,
-        writer& writer
+        netcore::buffered_socket& writer
     ) -> ext::task<> {
         co_await writer.write(string.data(), string.size());
     }
@@ -38,7 +38,7 @@ namespace pg {
 
     auto type<const char*>::to_sql(
         const char* string,
-        writer& writer
+        netcore::buffered_socket& writer
     ) -> ext::task<> {
         co_await type<std::string_view>::to_sql(string, writer);
     }

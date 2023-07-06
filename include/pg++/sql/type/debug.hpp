@@ -62,7 +62,7 @@ namespace pg {
     struct type<debug::bytes> {
         static auto from_sql(
             std::int32_t size,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<debug::bytes> {
             auto data = std::unique_ptr<std::byte[]>(new std::byte[size]);
             co_await reader.read(data.get(), size);

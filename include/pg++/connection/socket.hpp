@@ -11,16 +11,10 @@ namespace pg::detail {
     class socket final {
         friend struct fmt::formatter<pg::detail::socket>;
 
-        netcore::socket inner;
-        pg::reader reader;
-        pg::writer writer;
+        netcore::buffered_socket inner;
     public:
         template <typename... Args>
-        socket(Args&&... args) :
-            inner(std::forward<Args>(args)...),
-            reader(inner),
-            writer(inner)
-        {}
+        socket(Args&&... args) : inner(std::forward<Args>(args)...) {}
 
         socket(socket&& other);
 
@@ -33,12 +27,12 @@ namespace pg::detail {
         template <composite_type T>
         auto from_row(std::int16_t fields) -> ext::task<T> {
             auto fields32 = static_cast<std::int32_t>(fields);
-            co_return co_await type<T>::from_row(fields32, reader);
+            co_return co_await type<T>::from_row(fields32, inner);
         }
 
         template <pg::from_sql T>
         auto from_sql() -> ext::task<T> {
-            co_return co_await detail::from_sql<T>(reader);
+            co_return co_await detail::from_sql<T>(inner);
         }
 
         template <encodable... Args>
@@ -49,7 +43,7 @@ namespace pg::detail {
 
         template <decodable T>
         auto read() -> ext::task<T> {
-            return decoder<T>::decode(reader);
+            return decoder<T>::decode(inner);
         }
 
         auto read_header() -> ext::task<header>;
@@ -64,15 +58,17 @@ namespace pg::detail {
 
         template <encodable T>
         auto write(const T& t) -> ext::task<> {
-            return encoder<T>::encode(t, writer);
+            return encoder<T>::encode(t, inner);
         }
     };
 }
 
 template <>
-struct fmt::formatter<pg::detail::socket> : formatter<netcore::socket> {
+struct fmt::formatter<pg::detail::socket> :
+    formatter<netcore::buffered_socket>
+{
     template <typename FormatContext>
     auto format(const pg::detail::socket& socket, FormatContext& ctx) {
-        return formatter<netcore::socket>::format(socket.inner, ctx);
+        return formatter<netcore::buffered_socket>::format(socket.inner, ctx);
     }
 };

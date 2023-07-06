@@ -10,7 +10,7 @@ namespace pg {
 
         static auto from_sql(
             std::int32_t size,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<std::optional<T>> {
             static_assert(pg::from_sql<T>);
             co_return co_await type<T>::from_sql(size, reader);
@@ -18,7 +18,7 @@ namespace pg {
 
         static auto to_sql(
             const std::optional<T>& opt,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<> {
             static_assert(pg::to_sql<T>);
             return type<T>::to_sql(*opt, writer);

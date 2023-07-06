@@ -5,7 +5,7 @@
 namespace pg {
     auto type<json>::from_sql(
         std::int32_t size,
-        reader& reader
+        netcore::buffered_socket& reader
     ) -> ext::task<json> {
         const auto version = static_cast<std::int8_t>(
             co_await detail::decoder<char>::decode(reader)
@@ -26,7 +26,10 @@ namespace pg {
         co_return json::parse(string);
     }
 
-    auto type<json>::to_sql(const json& j, writer& writer) -> ext::task<> {
+    auto type<json>::to_sql(
+        const json& j,
+        netcore::buffered_socket& writer
+    ) -> ext::task<> {
         co_await detail::encoder<char>::encode(version, writer);
 
         const auto string = j.dump();

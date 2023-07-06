@@ -8,7 +8,7 @@
 namespace pg::detail {
     template <std::signed_integral T>
     struct decoder<T> {
-        static auto decode(reader& reader) -> ext::task<T> {
+        static auto decode(netcore::buffered_socket& reader) -> ext::task<T> {
             T result = 0;
 
             co_await reader.read(&result, sizeof(T));
@@ -22,7 +22,10 @@ namespace pg::detail {
 
     template <std::signed_integral T>
     struct encoder<T> {
-        static auto encode(T t, writer& writer) -> ext::task<> {
+        static auto encode(
+            T t,
+            netcore::buffered_socket& writer
+        ) -> ext::task<> {
             TIMBER_TRACE("write Int{}({})", sizeof(T) * 8, t);
 
             const auto be = ext::to_be(t);

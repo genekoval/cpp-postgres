@@ -164,6 +164,7 @@ namespace pg::detail {
 
         connection(
             netcore::socket&& socket,
+            std::size_t buffer_size,
             notice_callback_type&& callback = {}
         );
 

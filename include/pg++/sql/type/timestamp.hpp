@@ -32,7 +32,7 @@ namespace pg {
 
         static auto from_sql(
             std::int32_t size,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<time_point> {
             using int64 = type<std::int64_t>;
             using detail::epoch_offset;
@@ -52,7 +52,7 @@ namespace pg {
 
         static auto to_sql(
             const time_point time,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<> {
             using int64 = type<std::int64_t>;
             using detail::epoch_offset;

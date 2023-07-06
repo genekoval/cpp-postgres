@@ -2,19 +2,11 @@
 
 #include "io.hpp"
 
+#include <netcore/netcore>
+
 namespace pg {
-    class writer final : public detail::io {
-        auto write_bytes(const std::byte* src, std::size_t len) -> ext::task<>;
-    public:
-        explicit writer(netcore::socket& socket);
-
-        auto flush() -> ext::task<>;
-
-        auto write(const void* src, std::size_t len) -> ext::task<>;
-    };
-
     template <typename T>
-    concept to_sql = requires(const T& t, writer& w) {
+    concept to_sql = requires(const T& t, netcore::buffered_socket& w) {
         { type<std::remove_cvref_t<T>>::to_sql(t, w) } ->
             std::same_as<ext::task<>>;
 
@@ -28,7 +20,7 @@ namespace pg::detail {
     struct encoder {};
 
     template <typename T>
-    concept encodable = requires(const T& t, writer& w) {
+    concept encodable = requires(const T& t, netcore::buffered_socket& w) {
         { encoder<std::remove_cvref_t<T>>::encode(t, w) } ->
             std::same_as<ext::task<>>;
 

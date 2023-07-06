@@ -36,7 +36,7 @@ namespace pg {
 
     auto type<bytea>::from_sql(
         std::int32_t size,
-        reader& reader
+        netcore::buffered_socket& reader
     ) -> ext::task<bytea> {
         auto result = bytea{static_cast<std::size_t>(size)};
         co_await reader.read(result.data(), result.size());
@@ -45,7 +45,7 @@ namespace pg {
 
     auto type<bytea>::to_sql(
         const bytea& bytea,
-        writer& writer
+        netcore::buffered_socket& writer
     ) -> ext::task<> {
         co_await writer.write(bytea.data(), bytea.size());
     }
@@ -56,7 +56,7 @@ namespace pg {
 
     auto type<std::span<const std::byte>>::to_sql(
         std::span<const std::byte> bytes,
-        writer& writer
+        netcore::buffered_socket& writer
     ) -> ext::task<> {
         co_await writer.write(bytes.data(), bytes.size());
     }

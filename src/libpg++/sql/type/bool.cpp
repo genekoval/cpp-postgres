@@ -3,7 +3,7 @@
 namespace pg {
     auto type<bool>::from_sql(
         std::int32_t size,
-        reader& reader
+        netcore::buffered_socket& reader
     ) -> ext::task<bool> {
         auto result = false;
 
@@ -11,7 +11,10 @@ namespace pg {
         co_return result;
     }
 
-    auto type<bool>::to_sql(bool b, writer& writer) -> ext::task<> {
+    auto type<bool>::to_sql(
+        bool b,
+        netcore::buffered_socket& writer
+    ) -> ext::task<> {
         co_await writer.write(&b, sizeof(bool));
     }
 }

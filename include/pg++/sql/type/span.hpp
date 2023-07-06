@@ -24,7 +24,7 @@ namespace pg {
 
         static auto to_sql(
             std::span<const T> span,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<> {
             using int32 = detail::encoder<std::int32_t>;
 

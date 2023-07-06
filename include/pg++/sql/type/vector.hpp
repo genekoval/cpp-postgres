@@ -16,7 +16,7 @@ namespace pg {
 
         static auto from_sql(
             std::int32_t size,
-            reader& reader
+            netcore::buffered_socket& reader
         ) -> ext::task<std::vector<T>> {
             using int32 = detail::decoder<std::int32_t>;
 
@@ -54,7 +54,7 @@ namespace pg {
 
         static auto to_sql(
             std::span<const T> span,
-            writer& writer
+            netcore::buffered_socket& writer
         ) -> ext::task<> {
             return span::to_sql(span, writer);
         }
