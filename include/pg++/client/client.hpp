@@ -173,12 +173,14 @@ namespace pg {
             (composite_type<T> || from_sql<T>) &&
             ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto stream(
+            std::string_view name,
             std::string_view query,
             std::int32_t max_rows,
             Parameters&&... parameters
         ) -> ext::task<portal<T>> {
             co_await prepare<Parameters...>("", query);
             co_return co_await stream_prepared<T>(
+                name,
                 "",
                 max_rows,
                 std::forward<Parameters>(parameters)...
@@ -190,19 +192,20 @@ namespace pg {
             (composite_type<T> || from_sql<T>) &&
             ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto stream_prepared(
+            std::string_view name,
             std::string_view statement,
             std::int32_t max_rows,
             Parameters&&... parameters
         ) -> ext::task<portal<T>> {
             auto connection = co_await handle.lock();
             co_await connection->bind(
-                "",
+                name,
                 statement,
                 format::binary,
                 std::forward<Parameters>(parameters)...
             );
 
-            co_return portal<T>(handle.shared(), "", max_rows);
+            co_return portal<T>(handle.shared(), name, max_rows);
         }
 
         auto unignore() noexcept -> void;

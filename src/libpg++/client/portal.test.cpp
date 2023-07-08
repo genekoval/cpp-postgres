@@ -18,6 +18,7 @@ protected:
 TEST_F(Portal, StreamRows) {
     run([&]() -> ext::task<> {
         auto portal = co_await client->stream<std::string>(
+            "StreamRows",
             "SELECT message FROM cursor_test ORDER BY message",
             2
         );
