@@ -47,7 +47,6 @@ namespace pg {
             params.params
         );
 
-        detail::run_connection_task(connection);
         co_return pg::client(connection);
     }
 }

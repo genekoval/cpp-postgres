@@ -67,17 +67,13 @@ namespace pg::detail {
         // Unsupported protocol options
         std::vector<std::string> unsupported_options;
 
-        detail::header header;
-        ext::continuation<> continuation;
-        ext::mutex can_read;
-
         auto authentication(std::string_view password) -> ext::task<>;
 
         auto backend_key_data() -> ext::task<>;
 
         auto command_complete() -> ext::task<std::string>;
 
-        auto consume_input() -> ext::task<>;
+        auto consume_input() -> ext::task<detail::header>;
 
         auto data_row(
             std::span<const column> columns
@@ -138,9 +134,6 @@ namespace pg::detail {
         auto parameter_status() -> ext::task<>;
 
         auto password_message(std::string_view password) -> ext::task<>;
-
-        auto read_header() ->
-            ext::task<std::pair<detail::header, ext::mutex::guard>>;
 
         auto ready_for_query() -> ext::task<>;
 
@@ -240,7 +233,7 @@ namespace pg::detail {
             auto result = std::optional<T>();
 
             do {
-                const auto [header, guard] = co_await read_header();
+                const auto header = co_await consume_input();
 
                 switch (header.code) {
                     case 'D':
@@ -285,7 +278,7 @@ namespace pg::detail {
             co_await flush();
 
             do {
-                const auto [header, guard] = co_await read_header();
+                const auto header = co_await consume_input();
 
                 switch (header.code) {
                     case 'D':
@@ -571,8 +564,6 @@ namespace pg::detail {
         auto unlisten() -> void;
 
         auto unlisten(const std::string& channel) -> void;
-
-        auto wait_for_input() -> ext::task<>;
     };
 
     struct connection_handle final {

@@ -80,35 +80,27 @@ namespace pg::detail {
         co_return co_await socket.read<std::string>();
     }
 
-    auto connection::consume_input() -> ext::task<> {
-        auto lock = co_await can_read.lock();
-        header = co_await socket.read<detail::header>();
+    auto connection::consume_input() -> ext::task<detail::header> {
+        co_await socket.flush();
 
-        switch (header.code) {
-            case 'A':
-                co_await notification_response();
-                break;
-            case 'N':
-                co_await notice_response();
-                break;
-            case 'S':
-                co_await parameter_status();
-                break;
-            case 'E':
-                {
-                    auto error = co_await error_response();
+        while (true) {
+            const auto header = co_await socket.read<detail::header>();
 
-                    if (continuation) {
-                        continuation.resume(std::make_exception_ptr(error));
-                    }
-                    else throw std::move(error);
-                }
-                break;
-            default:
-                lock.unlock();
-                if (continuation) continuation.resume();
-                else co_await continuation;
-                break;
+            switch (header.code) {
+                case 'A':
+                    co_await notification_response();
+                    break;
+                case 'N':
+                    co_await notice_response();
+                    break;
+                case 'S':
+                    co_await parameter_status();
+                    break;
+                case 'E':
+                    throw co_await error_response();
+                default:
+                    co_return header;
+            }
         }
     }
 
@@ -133,7 +125,7 @@ namespace pg::detail {
         co_await socket.message('D', 'P', portal);
         co_await flush();
 
-        const auto [header, guard] = co_await read_header();
+        const auto header = co_await consume_input();
 
         switch (header.code) {
             case 'T':
@@ -161,7 +153,7 @@ namespace pg::detail {
         co_await flush();
 
         do {
-            const auto [header, guard] = co_await read_header();
+            const auto header = co_await consume_input();
 
             switch (header.code) {
                 case 'D':
@@ -185,7 +177,7 @@ namespace pg::detail {
         std::string_view message,
         char code
     ) -> ext::task<std::int32_t> {
-        const auto [header, guard] = co_await read_header();
+        const auto header = co_await consume_input();
 
         if (header.code != code) {
             throw error(fmt::format(
@@ -301,27 +293,6 @@ namespace pg::detail {
         co_await socket.flush();
     }
 
-    auto connection::read_header() ->
-        ext::task<std::pair<detail::header, ext::mutex::guard>>
-    {
-        if (!open) throw broken_connection();
-
-        co_await socket.flush();
-
-        auto lock = ext::mutex::guard();
-
-        if (continuation) {
-            lock = co_await can_read.lock();
-            continuation.resume();
-        }
-        else {
-            co_await continuation;
-            lock = co_await can_read.lock();
-        }
-
-        co_return std::make_pair(header, std::move(lock));
-    }
-
     auto connection::ready_for_query() -> ext::task<> {
         const auto status = co_await socket.read<char>();
         this->status = static_cast<transaction_status>(status);
@@ -344,7 +315,7 @@ namespace pg::detail {
         auto ready = false;
 
         do {
-            const auto [header, guard] = co_await read_header();
+            const auto header = co_await consume_input();
 
             switch (header.code) {
                 case 'T':
@@ -421,7 +392,7 @@ namespace pg::detail {
         auto ready = false;
 
         do {
-            const auto [header, guard] = co_await read_header();
+            const auto header = co_await consume_input();
 
             switch (header.code) {
                 case '3':
@@ -450,31 +421,6 @@ namespace pg::detail {
         channels.erase(channel);
     }
 
-    auto connection::wait_for_input() -> ext::task<> {
-        open = true;
-
-        try {
-            do {
-                try {
-                    co_await consume_input();
-                }
-                catch (const netcore::task_canceled&) {
-                    open = false;
-                }
-            } while (open);
-
-            co_await terminate();
-        }
-        catch (const std::exception& ex) {
-            TIMBER_ERROR("{} connection aborted: {}", *this, ex.what());
-        }
-        catch (...) {
-            TIMBER_ERROR("{} connection aborted", *this);
-        }
-
-        open = false;
-    }
-
     connection_handle::connection_handle(std::shared_ptr<mutex> conn) :
         conn(std::move(conn))
     {}
@@ -496,11 +442,5 @@ namespace pg::detail {
 
     auto connection_handle::weak() const noexcept -> std::weak_ptr<mutex> {
         return conn;
-    }
-
-    auto run_connection_task(
-        std::shared_ptr<connection_handle::mutex> conn
-    ) -> ext::detached_task {
-        co_await conn->get().wait_for_input();
     }
 }
