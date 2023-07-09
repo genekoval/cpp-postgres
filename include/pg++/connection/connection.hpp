@@ -36,21 +36,6 @@ namespace pg::detail {
         transaction = 'T'
     };
 
-    struct awaitable final {
-        std::coroutine_handle<> coroutine;
-        std::exception_ptr exception;
-        header response;
-        std::reference_wrapper<
-            std::optional<std::reference_wrapper<awaitable>>
-        > ref;
-
-        auto await_ready() const noexcept -> bool;
-
-        auto await_suspend(std::coroutine_handle<> coroutine) -> void;
-
-        auto await_resume() const -> header;
-    };
-
     class connection final {
         friend struct fmt::formatter<connection>;
 
@@ -82,7 +67,9 @@ namespace pg::detail {
         // Unsupported protocol options
         std::vector<std::string> unsupported_options;
 
-        std::optional<std::reference_wrapper<awaitable>> waiter;
+        ext::continuation<header> continuation;
+
+        ext::mutex can_read;
 
         auto authentication(std::string_view password) -> ext::task<>;
 
@@ -152,7 +139,7 @@ namespace pg::detail {
 
         auto password_message(std::string_view password) -> ext::task<>;
 
-        auto read_header() -> ext::task<header>;
+        auto read_header() -> ext::task<std::pair<header, ext::mutex::guard>>;
 
         auto ready_for_query() -> ext::task<>;
 
@@ -252,9 +239,9 @@ namespace pg::detail {
             auto result = std::optional<T>();
 
             do {
-                const auto res = co_await read_header();
+                const auto [header, guard] = co_await read_header();
 
-                switch (res.code) {
+                switch (header.code) {
                     case 'D':
                         if (result) {
                             throw unexpected_data("too many rows returned");
@@ -271,7 +258,7 @@ namespace pg::detail {
                         result.emplace();
                         break;
                     default:
-                        throw unexpected_message(res.code);
+                        throw unexpected_message(header.code);
                 }
             } while (!done);
 
@@ -297,9 +284,9 @@ namespace pg::detail {
             co_await flush();
 
             do {
-                const auto res = co_await read_header();
+                const auto [header, guard] = co_await read_header();
 
-                switch (res.code) {
+                switch (header.code) {
                     case 'D':
                         it = co_await data_row<Type>();
                         break;
@@ -310,7 +297,7 @@ namespace pg::detail {
                     case 'I':
                         co_return std::string();
                     default:
-                        throw unexpected_message(res.code);
+                        throw unexpected_message(header.code);
                 }
             } while (true);
         }

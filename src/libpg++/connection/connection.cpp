@@ -19,20 +19,6 @@ namespace {
 }
 
 namespace pg::detail {
-    auto awaitable::await_ready() const noexcept -> bool {
-        return false;
-    }
-
-    auto awaitable::await_suspend(std::coroutine_handle<> coroutine) -> void {
-        this->coroutine = coroutine;
-    }
-
-    auto awaitable::await_resume() const -> header {
-        ref.get().reset();
-        if (exception) std::rethrow_exception(exception);
-        return response;
-    }
-
     connection::connection(
         netcore::socket&& socket,
         std::size_t buffer_size,
@@ -95,9 +81,10 @@ namespace pg::detail {
     }
 
     auto connection::consume_input() -> ext::task<> {
-        const auto res = co_await socket.read<header>();
+        const auto lock = co_await can_read.lock();
+        const auto header = co_await socket.read<detail::header>();
 
-        switch (res.code) {
+        switch (header.code) {
             case 'A':
                 co_await notification_response();
                 break;
@@ -111,24 +98,14 @@ namespace pg::detail {
                 {
                     auto error = co_await error_response();
 
-                    if (waiter) {
-                        auto& waiter = this->waiter->get();
-                        waiter.exception = std::make_exception_ptr(error);
-                        waiter.coroutine.resume();
+                    if (continuation) {
+                        continuation.resume(std::make_exception_ptr(error));
                     }
                     else throw std::move(error);
                 }
                 break;
             default:
-                if (waiter) {
-                    auto& waiter = this->waiter->get();
-                    waiter.response = res;
-                    waiter.coroutine.resume();
-                }
-                else throw error(fmt::format(
-                    "received message byte without an active handler: '{}'",
-                    res.code
-                ));
+                continuation.resume(header);
                 break;
         }
     }
@@ -154,15 +131,15 @@ namespace pg::detail {
         co_await socket.message('D', 'P', portal);
         co_await flush();
 
-        const auto res = co_await read_header();
+        const auto [header, guard] = co_await read_header();
 
-        switch (res.code) {
+        switch (header.code) {
             case 'T':
                 co_return co_await row_description();
             case 'n':
                 co_return std::vector<column>();
             default:
-                throw unexpected_message(res.code);
+                throw unexpected_message(header.code);
         }
     }
 
@@ -182,9 +159,9 @@ namespace pg::detail {
         co_await flush();
 
         do {
-            const auto res = co_await read_header();
+            const auto [header, guard] = co_await read_header();
 
-            switch (res.code) {
+            switch (header.code) {
                 case 'D':
                     rows.emplace_back(co_await data_row(columns));
                     break;
@@ -197,7 +174,7 @@ namespace pg::detail {
                     // Empty Query Response
                     co_return std::string();
                 default:
-                    throw unexpected_message(res.code);
+                    throw unexpected_message(header.code);
             }
         } while (true);
     }
@@ -206,18 +183,18 @@ namespace pg::detail {
         std::string_view message,
         char code
     ) -> ext::task<std::int32_t> {
-        const auto res = co_await read_header();
+        const auto [header, guard] = co_await read_header();
 
-        if (res.code != code) {
+        if (header.code != code) {
             throw error(fmt::format(
                 "expected {}('{}'), received '{}'",
                 message,
                 code,
-                res.code
+                header.code
             ));
         }
 
-        co_return res.len;
+        co_return header.len;
     }
 
     auto connection::flush() -> ext::task<> {
@@ -322,14 +299,17 @@ namespace pg::detail {
         co_await socket.flush();
     }
 
-    auto connection::read_header() -> ext::task<header> {
+    auto connection::read_header() ->
+        ext::task<std::pair<header, ext::mutex::guard>>
+    {
         if (!open) throw broken_connection();
 
         co_await socket.flush();
 
-        auto waiter = awaitable { .ref = this->waiter };
-        this->waiter = waiter;
-        co_return co_await waiter;
+        const auto header = co_await continuation;
+        auto guard = co_await can_read.lock();
+
+        co_return std::make_pair(header, std::move(guard));
     }
 
     auto connection::ready_for_query() -> ext::task<> {
@@ -354,9 +334,9 @@ namespace pg::detail {
         auto ready = false;
 
         do {
-            const auto res = co_await read_header();
+            const auto [header, guard] = co_await read_header();
 
-            switch (res.code) {
+            switch (header.code) {
                 case 'T':
                     columns = co_await row_description();
                     break;
@@ -431,9 +411,9 @@ namespace pg::detail {
         auto ready = false;
 
         do {
-            const auto res = co_await read_header();
+            const auto [header, guard] = co_await read_header();
 
-            switch (res.code) {
+            switch (header.code) {
                 case '3':
                     TIMBER_DEBUG("Close Complete");
                     break;
