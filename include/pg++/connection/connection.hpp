@@ -67,8 +67,8 @@ namespace pg::detail {
         // Unsupported protocol options
         std::vector<std::string> unsupported_options;
 
-        ext::continuation<header> continuation;
-
+        detail::header header;
+        ext::continuation<> continuation;
         ext::mutex can_read;
 
         auto authentication(std::string_view password) -> ext::task<>;
@@ -139,7 +139,8 @@ namespace pg::detail {
 
         auto password_message(std::string_view password) -> ext::task<>;
 
-        auto read_header() -> ext::task<std::pair<header, ext::mutex::guard>>;
+        auto read_header() ->
+            ext::task<std::pair<detail::header, ext::mutex::guard>>;
 
         auto ready_for_query() -> ext::task<>;
 

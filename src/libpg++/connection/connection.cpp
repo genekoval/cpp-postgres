@@ -81,8 +81,8 @@ namespace pg::detail {
     }
 
     auto connection::consume_input() -> ext::task<> {
-        const auto lock = co_await can_read.lock();
-        const auto header = co_await socket.read<detail::header>();
+        auto lock = co_await can_read.lock();
+        header = co_await socket.read<detail::header>();
 
         switch (header.code) {
             case 'A':
@@ -105,7 +105,9 @@ namespace pg::detail {
                 }
                 break;
             default:
-                continuation.resume(header);
+                lock.unlock();
+                if (continuation) continuation.resume();
+                else co_await continuation;
                 break;
         }
     }
@@ -300,16 +302,24 @@ namespace pg::detail {
     }
 
     auto connection::read_header() ->
-        ext::task<std::pair<header, ext::mutex::guard>>
+        ext::task<std::pair<detail::header, ext::mutex::guard>>
     {
         if (!open) throw broken_connection();
 
         co_await socket.flush();
 
-        const auto header = co_await continuation;
-        auto guard = co_await can_read.lock();
+        auto lock = ext::mutex::guard();
 
-        co_return std::make_pair(header, std::move(guard));
+        if (continuation) {
+            lock = co_await can_read.lock();
+            continuation.resume();
+        }
+        else {
+            co_await continuation;
+            lock = co_await can_read.lock();
+        }
+
+        co_return std::make_pair(header, std::move(lock));
     }
 
     auto connection::ready_for_query() -> ext::task<> {
@@ -375,7 +385,7 @@ namespace pg::detail {
         auto ready = false;
 
         do {
-            const auto res = co_await socket.read<header>();
+            const auto res = co_await socket.read<detail::header>();
 
             switch (res.code) {
                 case 'R':
