@@ -85,7 +85,7 @@ struct fmt::formatter<pg::debug::bytes> {
         const pg::debug::bytes& bytes,
         FormatContext& ctx
     ) {
-        return format_to(
+        return fmt::format_to(
             ctx.out(),
             "({:L} byte{}) {}",
             bytes.size(),

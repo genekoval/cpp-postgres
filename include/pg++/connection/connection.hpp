@@ -612,7 +612,7 @@ struct fmt::formatter<pg::detail::connection> {
         const pg::detail::connection& connection,
         FormatContext& ctx
     ) {
-        return format_to(
+        return fmt::format_to(
             ctx.out(),
             "postgres{}",
             connection.pid == 0 ? "" : fmt::format("[{}]", connection.pid)
