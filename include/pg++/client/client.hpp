@@ -208,6 +208,36 @@ namespace pg {
             co_return portal<T>(handle.shared(), name, max_rows);
         }
 
+        template <typename Result, sql_type... Parameters>
+        requires
+            (composite_type<Result>|| from_sql<Result>) &&
+            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto try_fetch(
+            std::string_view query, 
+            Parameters&&... parameters
+        ) -> ext::task<std::optional<Result>> {
+            auto connection = co_await handle.lock();
+            co_return co_await connection->template try_fetch<Result>(
+                query,
+                std::forward<Parameters>(parameters)...
+            );
+        }
+
+        template <typename Result, sql_type... Parameters>
+        requires
+            (composite_type<Result> || from_sql<Result>) &&
+            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto try_fetch_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<std::optional<Result>> {
+            auto connection = co_await handle.lock();
+            co_return co_await connection->template try_fetch_prepared<Result>(
+                statement,
+                std::forward<Parameters>(parameters)...
+            );
+        }
+
         auto unignore() noexcept -> void;
 
         auto unignore(

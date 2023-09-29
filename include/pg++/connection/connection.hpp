@@ -1,6 +1,7 @@
 #pragma once
 
 #include "channel.hpp"
+#include "pg++/sql/sql.hpp"
 #include "socket.hpp"
 #include "type/enum.hpp"
 #include "type/int.hpp"
@@ -225,14 +226,13 @@ namespace pg::detail {
 
         template <typename T>
         requires composite_type<T> || pg::from_sql<T>
-        auto execute(std::string_view portal) -> ext::task<T> {
+        auto execute(std::string_view portal) -> ext::task<std::optional<T>> {
             co_await socket.message('E', portal, 0);
             co_await flush();
 
-            auto done = false;
             auto result = std::optional<T>();
 
-            do {
+            while (true) {
                 const auto header = co_await consume_input();
 
                 switch (header.code) {
@@ -244,23 +244,13 @@ namespace pg::detail {
                         break;
                     case 'C':
                         co_await command_complete();
-                        done = true;
-                        break;
-                    case 's':
-                        throw unexpected_data("too many rows returned");
+                        co_return result;
                     case 'I':
-                        result.emplace();
-                        break;
+                        co_return std::nullopt;
                     default:
                         throw unexpected_message(header.code);
                 }
-            } while (!done);
-
-            if (!result) {
-                throw unexpected_data("expected 1 row, received 0");
             }
-
-            co_return std::move(*result);
         }
 
         template <typename Container>
@@ -319,16 +309,16 @@ namespace pg::detail {
             std::string_view statement,
             Parameters&&... parameters
         ) -> ext::task<Result> {
-            co_return co_await extended_query([&]() -> ext::task<Result> {
-                co_await bind(
-                    "",
-                    statement,
-                    format::binary,
-                    std::forward<Parameters>(parameters)...
-                );
+            auto result = co_await try_fetch_prepared<Result>(
+                statement,
+                std::forward<Parameters>(parameters)...
+            );
 
-                co_return co_await execute<Result>("");
-            }());
+            if (!result) {
+                throw unexpected_data("expected 1 row, received 0");
+            }
+
+            co_return std::move(*result);
         }
 
         template <typename T, pg::sql_type... Parameters>
@@ -560,6 +550,41 @@ namespace pg::detail {
         ) -> ext::task<>;
 
         auto sync() -> ext::task<>;
+
+        template <typename Result, pg::sql_type... Parameters>
+        requires
+            (composite_type<Result>|| pg::from_sql<Result>) &&
+            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto try_fetch(
+            std::string_view query,
+            Parameters&&... parameters
+        ) -> ext::task<std::optional<Result>> {
+            co_await prepare<Parameters...>("", query);
+            co_return co_await try_fetch_prepared<Result>(
+                "",
+                std::forward<Parameters>(parameters)...
+            );
+        }
+
+        template <typename Result, pg::sql_type... Parameters>
+        requires
+            (composite_type<Result> || pg::from_sql<Result>) &&
+            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto try_fetch_prepared(
+            std::string_view statement,
+            Parameters&&... parameters
+        ) -> ext::task<std::optional<Result>> {
+            co_return co_await extended_query([&]() -> ext::task<std::optional<Result>> {
+                co_await bind(
+                    "",
+                    statement,
+                    format::binary,
+                    std::forward<Parameters>(parameters)...
+                );
+
+                co_return co_await execute<Result>("");
+            }());
+        }
 
         auto unlisten() -> void;
 
