@@ -1,11 +1,11 @@
 #pragma once
 
 #include "reader.hpp"
-#include "writer.hpp"
 #include "type/byte.hpp"
 #include "type/header.hpp"
 #include "type/int.hpp"
 #include "type/sql.hpp"
+#include "writer.hpp"
 
 namespace pg::detail {
     class socket final {
@@ -65,8 +65,7 @@ namespace pg::detail {
 
 template <>
 struct fmt::formatter<pg::detail::socket> :
-    formatter<netcore::buffered_socket>
-{
+    formatter<netcore::buffered_socket> {
     template <typename FormatContext>
     auto format(const pg::detail::socket& socket, FormatContext& ctx) {
         return formatter<netcore::buffered_socket>::format(socket.inner, ctx);

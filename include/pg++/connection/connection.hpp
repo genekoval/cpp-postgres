@@ -15,10 +15,7 @@
 #include <pg++/sql/type/string.hpp>
 
 namespace pg {
-    enum class format : std::int16_t {
-        text,
-        binary
-    };
+    enum class format : std::int16_t { text, binary };
 
     static_assert(detail::encodable<format>);
 
@@ -76,9 +73,7 @@ namespace pg::detail {
 
         auto consume_input() -> ext::task<detail::header>;
 
-        auto data_row(
-            std::span<const column> columns
-        ) -> ext::task<row>;
+        auto data_row(std::span<const column> columns) -> ext::task<row>;
 
         template <typename T>
         requires pg::from_sql<T> || composite_type<T>
@@ -89,24 +84,19 @@ namespace pg::detail {
                 if constexpr (composite_type<T>) {
                     co_return co_await socket.from_row<T>(fields);
                 }
-                else {
-                    throw unexpected_data("too many fields");
-                }
+                else { throw unexpected_data("too many fields"); }
             }
 
             co_return co_await socket.from_sql<T>();
         };
 
-        auto describe(
-            std::string_view portal
-        ) -> ext::task<std::vector<column>>;
+        auto describe(std::string_view portal)
+            -> ext::task<std::vector<column>>;
 
         auto error_response() -> ext::task<sql_error>;
 
-        auto expect(
-            std::string_view message,
-            char code
-        ) -> ext::task<std::int32_t>;
+        auto expect(std::string_view message, char code)
+            -> ext::task<std::int32_t>;
 
         template <typename R>
         auto extended_query(ext::task<R>&& task) -> ext::task<R> {
@@ -184,24 +174,21 @@ namespace pg::detail {
 
         auto cancel() noexcept -> void;
 
-        auto find_channel(
-            const std::string& name
-        ) const noexcept -> std::shared_ptr<detail::channel>;
+        auto find_channel(const std::string& name) const noexcept
+            -> std::shared_ptr<detail::channel>;
 
         auto close_portal(std::string_view name) -> ext::task<>;
 
         template <pg::sql_type... Parameters>
-        requires ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
-        auto exec(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<> {
+        requires((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto exec(std::string_view query, Parameters&&... parameters)
+            -> ext::task<> {
             co_await prepare<Parameters...>("", query);
             co_await exec_prepared("", std::forward<Parameters>(parameters)...);
         }
 
         template <pg::sql_type... Parameters>
-        requires ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto exec_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -211,10 +198,11 @@ namespace pg::detail {
                 std::forward<Parameters>(parameters)...
             );
 
-            if (!result.empty()) throw unexpected_data(fmt::format(
-                "expected zero rows, received {}",
-                result.size()
-            ));
+            if (!result.empty())
+                throw unexpected_data(fmt::format(
+                    "expected zero rows, received {}",
+                    result.size()
+                ));
         }
 
         auto execute(
@@ -242,21 +230,16 @@ namespace pg::detail {
                         }
                         result.emplace(co_await data_row<T>());
                         break;
-                    case 'C':
-                        co_await command_complete();
-                        co_return result;
-                    case 'I':
-                        co_return std::nullopt;
-                    default:
-                        throw unexpected_message(header.code);
+                    case 'C': co_await command_complete(); co_return result;
+                    case 'I': co_return std::nullopt;
+                    default: throw unexpected_message(header.code);
                 }
             }
         }
 
         template <typename Container>
-        requires
-            composite_type<typename Container::value_type> ||
-            pg::from_sql<typename Container::value_type>
+        requires composite_type<typename Container::value_type> ||
+                 pg::from_sql<typename Container::value_type>
         auto execute(
             std::string_view portal,
             std::back_insert_iterator<Container> it,
@@ -271,29 +254,20 @@ namespace pg::detail {
                 const auto header = co_await consume_input();
 
                 switch (header.code) {
-                    case 'D':
-                        it = co_await data_row<Type>();
-                        break;
-                    case 'C':
-                        co_return co_await command_complete();
-                    case 's':
-                        co_return std::nullopt;
-                    case 'I':
-                        co_return std::string();
-                    default:
-                        throw unexpected_message(header.code);
+                    case 'D': it = co_await data_row<Type>(); break;
+                    case 'C': co_return co_await command_complete();
+                    case 's': co_return std::nullopt;
+                    case 'I': co_return std::string();
+                    default: throw unexpected_message(header.code);
                 }
             } while (true);
         }
 
         template <typename Result, pg::sql_type... Parameters>
-        requires
-            (composite_type<Result> || pg::from_sql<Result>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
-        auto fetch(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<Result> {
+        requires(composite_type<Result> || pg::from_sql<Result>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto fetch(std::string_view query, Parameters&&... parameters)
+            -> ext::task<Result> {
             co_await prepare<Parameters...>("", query);
             co_return co_await fetch_prepared<Result>(
                 "",
@@ -302,9 +276,8 @@ namespace pg::detail {
         }
 
         template <typename Result, pg::sql_type... Parameters>
-        requires
-            (composite_type<Result> || pg::from_sql<Result>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires(composite_type<Result> || pg::from_sql<Result>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto fetch_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -322,13 +295,10 @@ namespace pg::detail {
         }
 
         template <typename T, pg::sql_type... Parameters>
-        requires
-            (composite_type<T> || pg::from_sql<T>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
-        auto fetch_rows(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<std::vector<T>> {
+        requires(composite_type<T> || pg::from_sql<T>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto fetch_rows(std::string_view query, Parameters&&... parameters)
+            -> ext::task<std::vector<T>> {
             co_await prepare<Parameters...>("", query);
             co_return co_await fetch_rows_prepared<T>(
                 "",
@@ -337,27 +307,26 @@ namespace pg::detail {
         }
 
         template <typename T, pg::sql_type... Parameters>
-        requires
-            (composite_type<T> || pg::from_sql<T>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires(composite_type<T> || pg::from_sql<T>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto fetch_rows_prepared(
             std::string_view statement,
             Parameters&&... parameters
         ) -> ext::task<std::vector<T>> {
-            co_return co_await extended_query([&]() ->
-                ext::task<std::vector<T>>
-            {
-                co_await bind(
-                    "",
-                    statement,
-                    format::binary,
-                    std::forward<Parameters>(parameters)...
-                );
+            co_return co_await extended_query(
+                [&]() -> ext::task<std::vector<T>> {
+                    co_await bind(
+                        "",
+                        statement,
+                        format::binary,
+                        std::forward<Parameters>(parameters)...
+                    );
 
-                auto rows = std::vector<T>();
-                co_await execute("", std::back_inserter(rows), 0);
-                co_return rows;
-            }());
+                    auto rows = std::vector<T>();
+                    co_await execute("", std::back_inserter(rows), 0);
+                    co_return rows;
+                }()
+            );
         }
 
         auto flush() -> ext::task<>;
@@ -375,7 +344,7 @@ namespace pg::detail {
                 if constexpr (pg::has_typname<T>) {
                     TIMBER_DEBUG("Reading OID for type '{}'", type::name);
 
-                    const auto name = std::string_view { type::name };
+                    const auto name = std::string_view {type::name};
                     const auto delimiter = name.find(".");
 
                     if (delimiter == std::string_view::npos) {
@@ -394,6 +363,7 @@ namespace pg::detail {
                     }
                     else {
                         type::oid = co_await fetch<std::int32_t>(
+                            // clang-format off
                             "SELECT oid "
                             "FROM pg_type "
                             "WHERE "
@@ -403,6 +373,7 @@ namespace pg::detail {
                                     "FROM pg_namespace "
                                     "WHERE nspname = $2"
                                 ")",
+                            // clang-format on
                             name.substr(delimiter + 1),
                             name.substr(0, delimiter)
                         );
@@ -422,9 +393,8 @@ namespace pg::detail {
             }
         }
 
-        auto ignore(
-            const std::unordered_set<std::int32_t>* ignored
-        ) noexcept -> void;
+        auto ignore(const std::unordered_set<std::int32_t>* ignored) noexcept
+            -> void;
 
         auto listen(
             const std::string& name,
@@ -442,16 +412,12 @@ namespace pg::detail {
         ) -> ext::task<>;
 
         template <typename... Parameters>
-        requires
-            (pg::sql_type<Parameters> && ...) ||
-            (sizeof...(Parameters) == 0)
-        auto prepare(
-            std::string_view name,
-            std::string_view query
-        ) -> ext::task<> {
+        requires(pg::sql_type<Parameters> && ...) ||
+                (sizeof...(Parameters) == 0)
+        auto prepare(std::string_view name, std::string_view query)
+            -> ext::task<> {
             const auto types = std::array<std::int32_t, sizeof...(Parameters)> {
-                co_await get_oid<Parameters>()...
-            };
+                co_await get_oid<Parameters>()...};
 
             auto exception = std::exception_ptr();
             try {
@@ -469,20 +435,16 @@ namespace pg::detail {
             TIMBER_DEBUG(
                 "{} prepare {}: {}",
                 *this,
-                name.empty() ? "unnamed statement" : fmt::format(
-                    "statement '{}'",
-                    name
-                ),
+                name.empty() ? "unnamed statement"
+                             : fmt::format("statement '{}'", name),
                 query
             );
         }
 
         template <typename T, typename... Args>
-        requires (pg::sql_type<Args> && ...) || (sizeof...(Args) == 0)
-        auto prepare_fn(
-            std::string_view name,
-            auto (T::*)(Args...)
-        ) -> ext::task<> {
+        requires(pg::sql_type<Args> && ...) || (sizeof...(Args) == 0)
+        auto prepare_fn(std::string_view name, auto (T::*)(Args...))
+            -> ext::task<> {
             constexpr auto arg_count = sizeof...(Args);
 
             auto os = std::ostringstream();
@@ -501,11 +463,9 @@ namespace pg::detail {
         }
 
         template <pg::sql_type... Parameters>
-        requires (to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
-        auto query(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<result> {
+        requires(to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
+        auto query(std::string_view query, Parameters&&... parameters)
+            -> ext::task<result> {
             co_await prepare<Parameters...>("", query);
             co_return co_await query_prepared(
                 "",
@@ -514,7 +474,7 @@ namespace pg::detail {
         }
 
         template <pg::sql_type... Parameters>
-        requires (to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
+        requires(to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
         auto query_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -530,19 +490,14 @@ namespace pg::detail {
                 auto columns = co_await describe("");
                 auto rows = std::vector<row>();
 
-                const auto tag = co_await execute(
-                    "",
-                    columns,
-                    rows
-                );
+                const auto tag = co_await execute("", columns, rows);
 
-                co_return result { *tag, std::move(columns), std::move(rows) };
+                co_return result {*tag, std::move(columns), std::move(rows)};
             }());
         }
 
-        auto simple_query(
-            std::string_view query
-        ) -> ext::task<std::vector<result>>;
+        auto simple_query(std::string_view query)
+            -> ext::task<std::vector<result>>;
 
         auto startup_message(
             std::string_view password,
@@ -552,13 +507,10 @@ namespace pg::detail {
         auto sync() -> ext::task<>;
 
         template <typename Result, pg::sql_type... Parameters>
-        requires
-            (composite_type<Result>|| pg::from_sql<Result>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
-        auto try_fetch(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<std::optional<Result>> {
+        requires(composite_type<Result> || pg::from_sql<Result>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto try_fetch(std::string_view query, Parameters&&... parameters)
+            -> ext::task<std::optional<Result>> {
             co_await prepare<Parameters...>("", query);
             co_return co_await try_fetch_prepared<Result>(
                 "",
@@ -567,23 +519,24 @@ namespace pg::detail {
         }
 
         template <typename Result, pg::sql_type... Parameters>
-        requires
-            (composite_type<Result> || pg::from_sql<Result>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires(composite_type<Result> || pg::from_sql<Result>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto try_fetch_prepared(
             std::string_view statement,
             Parameters&&... parameters
         ) -> ext::task<std::optional<Result>> {
-            co_return co_await extended_query([&]() -> ext::task<std::optional<Result>> {
-                co_await bind(
-                    "",
-                    statement,
-                    format::binary,
-                    std::forward<Parameters>(parameters)...
-                );
+            co_return co_await extended_query(
+                [&]() -> ext::task<std::optional<Result>> {
+                    co_await bind(
+                        "",
+                        statement,
+                        format::binary,
+                        std::forward<Parameters>(parameters)...
+                    );
 
-                co_return co_await execute<Result>("");
-            }());
+                    co_return co_await execute<Result>("");
+                }()
+            );
         }
 
         auto unlisten() -> void;
@@ -620,9 +573,8 @@ namespace pg::detail {
         auto weak() const noexcept -> std::weak_ptr<mutex>;
     };
 
-    auto run_connection_task(
-        std::shared_ptr<connection_handle::mutex> conn
-    ) -> ext::detached_task;
+    auto run_connection_task(std::shared_ptr<connection_handle::mutex> conn)
+        -> ext::detached_task;
 }
 
 template <>
@@ -633,10 +585,7 @@ struct fmt::formatter<pg::detail::connection> {
     }
 
     template <typename FormatContext>
-    auto format(
-        const pg::detail::connection& connection,
-        FormatContext& ctx
-    ) {
+    auto format(const pg::detail::connection& connection, FormatContext& ctx) {
         return fmt::format_to(
             ctx.out(),
             "postgres{}",

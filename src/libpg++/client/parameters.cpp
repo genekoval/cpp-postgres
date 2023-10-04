@@ -22,8 +22,7 @@ namespace {
         parser(std::string_view str) :
             str(str),
             it(str.begin()),
-            end(str.end())
-        {}
+            end(str.end()) {}
 
         auto consume(char expected) -> void {
             if (it == end) throw std::runtime_error("unexpected EOF");
@@ -131,7 +130,7 @@ namespace {
         }
     public:
         static auto parse(std::string_view str) -> pg::parameter_list {
-            auto parser = ::parser{str};
+            auto parser = ::parser {str};
             auto params = pg::parameter_list();
 
             while (auto param = parser.parameter()) {
@@ -153,44 +152,42 @@ namespace {
 
         auto result = pg::parameter_list();
 
-        const auto getenv = [&result](
-            std::string_view var,
-            std::string_view key
-        ) {
-            if (const auto* value = std::getenv(var.data())) {
-                result[std::string(key)] = value;
-            }
-        };
+        const auto getenv =
+            [&result](std::string_view var, std::string_view key) {
+                if (const auto* value = std::getenv(var.data())) {
+                    result[std::string(key)] = value;
+                }
+            };
 
         for (const auto& [var, key] : std::initializer_list<env_pair> {
-            {"PGHOST", "host"},
-            {"PGHOSTADDR", "hostaddr"},
-            {"PGPORT", "port"},
-            {"PGDATABASE", "dbname"},
-            {"PGUSER", "user"},
-            {"PGPASSWORD", "password"},
-            {"PGPASSFILE", "passfile"},
-            {"PGCHANNELBINDING", "channel_binding"},
-            {"PGOPTIONS", "options"},
-            {"PGAPPNAME", "application_name"},
-            {"PGSSLMODE", "sslmode"},
-            {"PGSSLCOMPRESSION", "sslcompression"},
-            {"PGSSLCERT", "sslcert"},
-            {"PGSSLKEY", "sslkey"},
-            {"PGSSLROOTCERT", "sslrootcert"},
-            {"PGSSLCRL", "sslcrl"},
-            {"PGSSLCRLDIR", "sslcrldir"},
-            {"PGSSLSNI", "sslsni"},
-            {"PGREQUIREPEER", "requirepeer"},
-            {"PGSSLMINPROTOCOLVERSION", "ssl_min_protocol_version"},
-            {"PGSSLMAXPROTOCOLVERSION", "ssl_max_protocol_version"},
-            {"PGGSSENCMODE", "gssencmode"},
-            {"PGKRBSRVNAME", "krbsrvname"},
-            {"PGGSSLIB", "gsslib"},
-            {"PGCONNECT_TIMEOUT", "connect_timeout"},
-            {"PGCLIENTENCODING", "client_encoding"},
-            {"PGTARGETSESSIONATTRS", "target_session_attrs"}
-        }) getenv(var, key);
+                 {"PGHOST", "host"},
+                 {"PGHOSTADDR", "hostaddr"},
+                 {"PGPORT", "port"},
+                 {"PGDATABASE", "dbname"},
+                 {"PGUSER", "user"},
+                 {"PGPASSWORD", "password"},
+                 {"PGPASSFILE", "passfile"},
+                 {"PGCHANNELBINDING", "channel_binding"},
+                 {"PGOPTIONS", "options"},
+                 {"PGAPPNAME", "application_name"},
+                 {"PGSSLMODE", "sslmode"},
+                 {"PGSSLCOMPRESSION", "sslcompression"},
+                 {"PGSSLCERT", "sslcert"},
+                 {"PGSSLKEY", "sslkey"},
+                 {"PGSSLROOTCERT", "sslrootcert"},
+                 {"PGSSLCRL", "sslcrl"},
+                 {"PGSSLCRLDIR", "sslcrldir"},
+                 {"PGSSLSNI", "sslsni"},
+                 {"PGREQUIREPEER", "requirepeer"},
+                 {"PGSSLMINPROTOCOLVERSION", "ssl_min_protocol_version"},
+                 {"PGSSLMAXPROTOCOLVERSION", "ssl_max_protocol_version"},
+                 {"PGGSSENCMODE", "gssencmode"},
+                 {"PGKRBSRVNAME", "krbsrvname"},
+                 {"PGGSSLIB", "gsslib"},
+                 {"PGCONNECT_TIMEOUT", "connect_timeout"},
+                 {"PGCLIENTENCODING", "client_encoding"},
+                 {"PGTARGETSESSIONATTRS", "target_session_attrs"}})
+            getenv(var, key);
 
         return result;
     }
@@ -198,9 +195,8 @@ namespace {
     auto parse(pg::parameter_list& params) -> pg::parameters {
         params.merge(env());
 
-        const auto find = [&params](
-            const std::string& key
-        ) -> std::optional<std::string> {
+        const auto find = [&params](const std::string& key
+                          ) -> std::optional<std::string> {
             const auto result = params.find(key);
             if (result == params.end()) return std::nullopt;
             return result->second;
@@ -218,8 +214,7 @@ namespace {
 
         auto result = pg::parameters {
             .host = host,
-            .port = find("port").value_or(default_port)
-        };
+            .port = find("port").value_or(default_port)};
 
         auto user = std::string();
         if (const auto value = find("user")) user = std::move(*value);
@@ -240,15 +235,11 @@ namespace {
                 .username = user,
             },
             find("passfile")
-        )) result.password = std::move(*password);
+        ))
+            result.password = std::move(*password);
 
-        for (const auto& key : {
-            "application_name",
-            "client_encoding"
-        }) {
-            if (const auto value = find(key)) {
-                result.params[key] = *value;
-            }
+        for (const auto& key : {"application_name", "client_encoding"}) {
+            if (const auto value = find(key)) { result.params[key] = *value; }
         }
 
         return result;

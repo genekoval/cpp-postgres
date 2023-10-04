@@ -10,7 +10,7 @@ protected:
                 "DROP TABLE IF EXISTS fetch_test;"
                 "CREATE UNLOGGED TABLE fetch_test (word text);"
                 "INSERT INTO fetch_test (word) VALUES "
-                    "('hello'), ('world'), ('foo');"
+                "('hello'), ('world'), ('foo');"
             );
         }());
     }

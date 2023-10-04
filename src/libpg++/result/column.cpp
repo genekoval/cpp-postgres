@@ -3,9 +3,8 @@
 #include <pg++/result/column.hpp>
 
 namespace pg::detail {
-    auto decoder<column>::decode(
-        netcore::buffered_socket& reader
-    ) -> ext::task<column> {
+    auto decoder<column>::decode(netcore::buffered_socket& reader)
+        -> ext::task<column> {
         auto col = column();
 
         col.name = co_await decoder<std::string>::decode(reader);

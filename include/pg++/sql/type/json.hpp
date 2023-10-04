@@ -18,10 +18,8 @@ namespace pg {
             netcore::buffered_socket& reader
         ) -> ext::task<json>;
 
-        static auto to_sql(
-            const json& j,
-            netcore::buffered_socket& writer
-        ) -> ext::task<>;
+        static auto to_sql(const json& j, netcore::buffered_socket& writer)
+            -> ext::task<>;
 
         static auto size(const json& j) -> std::int32_t;
     };

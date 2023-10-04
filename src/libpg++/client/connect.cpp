@@ -9,10 +9,8 @@ namespace {
     namespace internal {
         constexpr auto default_buffer_size = 8_KiB;
 
-        auto connect(
-            std::string_view host,
-            std::string_view port
-        ) -> ext::task<netcore::socket> {
+        auto connect(std::string_view host, std::string_view port)
+            -> ext::task<netcore::socket> {
             if (host.starts_with('/')) {
                 co_return co_await netcore::connect(host);
             }
@@ -31,10 +29,8 @@ namespace pg {
         return connect(params, internal::default_buffer_size);
     }
 
-    auto connect(
-        const parameters& params,
-        std::size_t buffer_size
-    ) -> ext::task<client> {
+    auto connect(const parameters& params, std::size_t buffer_size)
+        -> ext::task<client> {
         auto connection = std::shared_ptr<netcore::mutex<detail::connection>>(
             new netcore::mutex<detail::connection>(
                 co_await internal::connect(params.host, params.port),

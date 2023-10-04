@@ -13,8 +13,7 @@ namespace {
         .hostname = "localhost",
         .port = "5432",
         .database = "test",
-        .username = "test"
-    };
+        .username = "test"};
 }
 
 class Passfile : public testing::Test {
@@ -31,18 +30,14 @@ protected:
         return passfile(test_fields, text);
     }
 
-    auto passfile(
-        const passfile_fields& fields,
-        const std::string& text
-    ) -> std::optional<std::string> {
+    auto passfile(const passfile_fields& fields, const std::string& text)
+        -> std::optional<std::string> {
         auto stream = std::istringstream(text);
         return pg::detail::passfile(fields, stream);
     }
 };
 
-TEST_F(Passfile, Empty) {
-    EXPECT_FALSE(passfile("").has_value());
-}
+TEST_F(Passfile, Empty) { EXPECT_FALSE(passfile("").has_value()); }
 
 TEST_F(Passfile, FirstLineNoNewline) {
     expect_password("localhost:5432:test:test:secret");

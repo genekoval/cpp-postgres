@@ -25,12 +25,9 @@ namespace pg::detail {
         notice_callback_type&& callback
     ) :
         notice_callback(std::forward<notice_callback_type>(callback)),
-        socket(std::forward<netcore::socket>(socket), buffer_size)
-    {}
+        socket(std::forward<netcore::socket>(socket), buffer_size) {}
 
-    connection::~connection() {
-        unlisten();
-    }
+    connection::~connection() { unlisten(); }
 
     auto connection::authentication(std::string_view password) -> ext::task<> {
         const auto auth = co_await socket.read<std::int32_t>();
@@ -41,11 +38,8 @@ namespace pg::detail {
             case 0:
                 TIMBER_DEBUG("{} authentication was successful", *this);
                 break;
-            case 3:
-                co_await password_message(password);
-                break;
-            default:
-                throw error("authentication method not supported");
+            case 3: co_await password_message(password); break;
+            default: throw error("authentication method not supported");
         }
     }
 
@@ -63,9 +57,8 @@ namespace pg::detail {
         socket.cancel();
     }
 
-    auto connection::find_channel(
-        const std::string& name
-    ) const noexcept -> std::shared_ptr<detail::channel> {
+    auto connection::find_channel(const std::string& name) const noexcept
+        -> std::shared_ptr<detail::channel> {
         const auto result = channels.find(name);
 
         if (result == channels.end()) return nullptr;
@@ -87,26 +80,17 @@ namespace pg::detail {
             const auto header = co_await socket.read<detail::header>();
 
             switch (header.code) {
-                case 'A':
-                    co_await notification_response();
-                    break;
-                case 'N':
-                    co_await notice_response();
-                    break;
-                case 'S':
-                    co_await parameter_status();
-                    break;
-                case 'E':
-                    throw co_await error_response();
-                default:
-                    co_return header;
+                case 'A': co_await notification_response(); break;
+                case 'N': co_await notice_response(); break;
+                case 'S': co_await parameter_status(); break;
+                case 'E': throw co_await error_response();
+                default: co_return header;
             }
         }
     }
 
-    auto connection::data_row(
-        std::span<const column> columns
-    ) -> ext::task<row> {
+    auto connection::data_row(std::span<const column> columns)
+        -> ext::task<row> {
         const auto size = co_await socket.read<std::int16_t>();
         auto fields = std::vector<field>();
         fields.reserve(size);
@@ -119,21 +103,17 @@ namespace pg::detail {
         co_return row(columns, std::move(fields));
     }
 
-    auto connection::describe(
-        std::string_view portal
-    ) -> ext::task<std::vector<column>> {
+    auto connection::describe(std::string_view portal)
+        -> ext::task<std::vector<column>> {
         co_await socket.message('D', 'P', portal);
         co_await flush();
 
         const auto header = co_await consume_input();
 
         switch (header.code) {
-            case 'T':
-                co_return co_await row_description();
-            case 'n':
-                co_return std::vector<column>();
-            default:
-                throw unexpected_message(header.code);
+            case 'T': co_return co_await row_description();
+            case 'n': co_return std::vector<column>();
+            default: throw unexpected_message(header.code);
         }
     }
 
@@ -156,27 +136,21 @@ namespace pg::detail {
             const auto header = co_await consume_input();
 
             switch (header.code) {
-                case 'D':
-                    rows.emplace_back(co_await data_row(columns));
-                    break;
-                case 'C':
-                    co_return co_await command_complete();
+                case 'D': rows.emplace_back(co_await data_row(columns)); break;
+                case 'C': co_return co_await command_complete();
                 case 's':
                     // Portal Suspended
                     co_return std::nullopt;
                 case 'I':
                     // Empty Query Response
                     co_return std::string();
-                default:
-                    throw unexpected_message(header.code);
+                default: throw unexpected_message(header.code);
             }
         } while (true);
     }
 
-    auto connection::expect(
-        std::string_view message,
-        char code
-    ) -> ext::task<std::int32_t> {
+    auto connection::expect(std::string_view message, char code)
+        -> ext::task<std::int32_t> {
         const auto header = co_await consume_input();
 
         if (header.code != code) {
@@ -191,12 +165,9 @@ namespace pg::detail {
         co_return header.len;
     }
 
-    auto connection::flush() -> ext::task<> {
-        co_await socket.message('H');
-    }
+    auto connection::flush() -> ext::task<> { co_await socket.message('H'); }
 
-    auto connection::ignore(
-        const std::unordered_set<std::int32_t>* ignored
+    auto connection::ignore(const std::unordered_set<std::int32_t>* ignored
     ) noexcept -> void {
         this->ignored = ignored;
     }
@@ -242,10 +213,9 @@ namespace pg::detail {
             "received from server process with PID {}",
             *this,
             notif.channel,
-            notif.payload.empty() ? "" : fmt::format(
-                R"(with payload "{}" )",
-                notif.payload
-            ),
+            notif.payload.empty()
+                ? ""
+                : fmt::format(R"(with payload "{}" )", notif.payload),
             notif.pid
         );
 
@@ -286,9 +256,8 @@ namespace pg::detail {
         co_await expect("ParseComplete", '1');
     }
 
-    auto connection::password_message(
-        std::string_view password
-    ) -> ext::task<> {
+    auto connection::password_message(std::string_view password)
+        -> ext::task<> {
         co_await socket.message('p', password);
         co_await socket.flush();
     }
@@ -302,9 +271,8 @@ namespace pg::detail {
         co_return co_await socket.read<std::vector<column>>();
     }
 
-    auto connection::simple_query(
-        std::string_view query
-    ) -> ext::task<std::vector<result>> {
+    auto connection::simple_query(std::string_view query)
+        -> ext::task<std::vector<result>> {
         co_await socket.message('Q', query);
 
         auto tag = std::string();
@@ -318,12 +286,8 @@ namespace pg::detail {
             const auto header = co_await consume_input();
 
             switch (header.code) {
-                case 'T':
-                    columns = co_await row_description();
-                    break;
-                case 'D':
-                    rows.emplace_back(co_await data_row(columns));
-                    break;
+                case 'T': columns = co_await row_description(); break;
+                case 'D': rows.emplace_back(co_await data_row(columns)); break;
                 case 'C':
                     tag = co_await command_complete();
                     results.emplace_back(
@@ -359,27 +323,16 @@ namespace pg::detail {
             const auto res = co_await socket.read<detail::header>();
 
             switch (res.code) {
-                case 'R':
-                    co_await authentication(password);
-                    break;
-                case 'v':
-                    co_await negotiate_protocol_version();
-                    break;
-                case 'K':
-                    co_await backend_key_data();
-                    break;
-                case 'S':
-                    co_await parameter_status();
-                    break;
+                case 'R': co_await authentication(password); break;
+                case 'v': co_await negotiate_protocol_version(); break;
+                case 'K': co_await backend_key_data(); break;
+                case 'S': co_await parameter_status(); break;
                 case 'Z':
                     co_await ready_for_query();
                     ready = true;
                     break;
-                case 'E':
-                    throw co_await error_response();
-                case 'N':
-                    co_await notice_response();
-                    break;
+                case 'E': throw co_await error_response();
+                case 'N': co_await notice_response(); break;
             }
         } while (!ready);
 
@@ -395,9 +348,7 @@ namespace pg::detail {
             const auto header = co_await consume_input();
 
             switch (header.code) {
-                case '3':
-                    TIMBER_DEBUG("Close Complete");
-                    break;
+                case '3': TIMBER_DEBUG("Close Complete"); break;
                 case 'Z':
                     co_await ready_for_query();
                     ready = true;
@@ -422,8 +373,7 @@ namespace pg::detail {
     }
 
     connection_handle::connection_handle(std::shared_ptr<mutex> conn) :
-        conn(std::move(conn))
-    {}
+        conn(std::move(conn)) {}
 
     connection_handle::~connection_handle() {
         if (conn) conn->get().cancel();
@@ -432,6 +382,7 @@ namespace pg::detail {
     auto connection_handle::get() const noexcept -> connection& {
         return conn->get();
     }
+
     auto connection_handle::lock() -> ext::task<guard> {
         co_return co_await conn->lock();
     }

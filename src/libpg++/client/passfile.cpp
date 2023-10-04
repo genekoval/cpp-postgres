@@ -65,10 +65,8 @@ namespace {
 }
 
 namespace pg::detail {
-    auto passfile(
-        const passfile_fields& fields,
-        std::istream& stream
-    ) -> std::optional<std::string> {
+    auto passfile(const passfile_fields& fields, std::istream& stream)
+        -> std::optional<std::string> {
         for (std::string line; std::getline(stream, line);) {
             const auto trimmed = ext::trim(line);
 
@@ -80,12 +78,11 @@ namespace pg::detail {
 
             auto skip = false;
 
-            for (const auto field : {
-                fields.hostname,
-                fields.port,
-                fields.database,
-                fields.username
-            }) {
+            for (const auto field :
+                 {fields.hostname,
+                  fields.port,
+                  fields.database,
+                  fields.username}) {
                 const auto token = next_token(it, end);
 
                 if (token.empty() || (token != wildcard && token != field)) {

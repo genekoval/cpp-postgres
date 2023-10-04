@@ -2,9 +2,8 @@
 #include <pg++/connection/type/string.hpp>
 
 namespace pg::detail {
-    auto decoder<std::string>::decode(
-        netcore::buffered_socket& reader
-    ) -> ext::task<std::string> {
+    auto decoder<std::string>::decode(netcore::buffered_socket& reader)
+        -> ext::task<std::string> {
         auto string = std::string();
         auto found_null = false;
 
@@ -51,9 +50,8 @@ namespace pg::detail {
         TIMBER_TRACE(R"(write String("{}"))", string);
     }
 
-    auto encoder<std::string_view>::size(
-        std::string_view string
-    ) -> std::int32_t {
+    auto encoder<std::string_view>::size(std::string_view string)
+        -> std::int32_t {
         return string.size() + 1; // Add one for the null terminator.
     }
 }

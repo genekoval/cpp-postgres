@@ -13,9 +13,8 @@ namespace pg::detail {
 
     template <>
     struct decoder<header> {
-        static auto decode(
-            netcore::buffered_socket& reader
-        ) -> ext::task<header>;
+        static auto decode(netcore::buffered_socket& reader)
+            -> ext::task<header>;
     };
 
     static_assert(decodable<header>);

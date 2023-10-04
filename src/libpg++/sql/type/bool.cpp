@@ -11,10 +11,8 @@ namespace pg {
         co_return result;
     }
 
-    auto type<bool>::to_sql(
-        bool b,
-        netcore::buffered_socket& writer
-    ) -> ext::task<> {
+    auto type<bool>::to_sql(bool b, netcore::buffered_socket& writer)
+        -> ext::task<> {
         co_await writer.write(&b, sizeof(bool));
     }
 }

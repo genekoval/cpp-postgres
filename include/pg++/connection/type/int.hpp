@@ -22,19 +22,15 @@ namespace pg::detail {
 
     template <std::signed_integral T>
     struct encoder<T> {
-        static auto encode(
-            T t,
-            netcore::buffered_socket& writer
-        ) -> ext::task<> {
+        static auto encode(T t, netcore::buffered_socket& writer)
+            -> ext::task<> {
             TIMBER_TRACE("write Int{}({})", sizeof(T) * 8, t);
 
             const auto be = ext::to_be(t);
             co_await writer.write(&be, sizeof(T));
         }
 
-        static auto size(T t) -> std::int32_t {
-            return sizeof(T);
-        }
+        static auto size(T t) -> std::int32_t { return sizeof(T); }
     };
 
     static_assert(decodable<std::int8_t>);

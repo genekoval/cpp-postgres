@@ -46,10 +46,8 @@ namespace pg {
         static constexpr std::int32_t oid = type<std::string>::oid;
         static constexpr std::string_view name = type<std::string>::name;
 
-        static auto to_sql(
-            const char* string,
-            netcore::buffered_socket& writer
-        ) -> ext::task<>;
+        static auto to_sql(const char* string, netcore::buffered_socket& writer)
+            -> ext::task<>;
 
         static auto size(const char* string) -> std::int32_t;
     };
@@ -62,10 +60,8 @@ namespace pg {
         static constexpr std::int32_t oid = type<std::string>::oid;
         static constexpr std::string_view name = type<std::string>::name;
 
-        static auto to_sql(
-            const char* string,
-            netcore::buffered_socket& writer
-        ) -> ext::task<> {
+        static auto to_sql(const char* string, netcore::buffered_socket& writer)
+            -> ext::task<> {
             co_await type<std::string_view>::to_sql(string, writer);
         }
 

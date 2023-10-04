@@ -8,11 +8,7 @@ namespace pg::detail {
         return *this;
     }
 
-    auto socket::cancel() noexcept -> void {
-        return inner.cancel();
-    }
+    auto socket::cancel() noexcept -> void { return inner.cancel(); }
 
-    auto socket::flush() -> ext::task<> {
-        return inner.flush();
-    }
+    auto socket::flush() -> ext::task<> { return inner.flush(); }
 }

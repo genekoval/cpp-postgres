@@ -13,8 +13,7 @@ namespace pg::detail {
             std::forward<std::weak_ptr<netcore::mutex<detail::connection>>>(
                 connection
             )
-        )
-    {}
+        ) {}
 
     channel::~channel() {
         if (auto connection = this->connection.lock()) {
@@ -22,17 +21,11 @@ namespace pg::detail {
         }
     }
 
-    auto channel::close() -> void {
-        event.cancel();
-    }
+    auto channel::close() -> void { event.cancel(); }
 
-    auto channel::ignore(std::int32_t pid) -> void {
-        ignored.insert(pid);
-    }
+    auto channel::ignore(std::int32_t pid) -> void { ignored.insert(pid); }
 
-    auto channel::listen() -> ext::task<std::string> {
-        return event.listen();
-    }
+    auto channel::listen() -> ext::task<std::string> { return event.listen(); }
 
     auto channel::name() const noexcept -> std::string_view {
         return channel_name;
@@ -43,19 +36,14 @@ namespace pg::detail {
         event.emit(payload);
     }
 
-    auto channel::unignore(std::int32_t pid) -> void {
-        ignored.erase(pid);
-    }
+    auto channel::unignore(std::int32_t pid) -> void { ignored.erase(pid); }
 }
 
 namespace pg {
     channel::channel(std::shared_ptr<detail::channel>&& inner) :
-        inner(std::forward<std::shared_ptr<detail::channel>>(inner))
-    {}
+        inner(std::forward<std::shared_ptr<detail::channel>>(inner)) {}
 
-    auto channel::ignore(std::int32_t pid) -> void {
-        inner->ignore(pid);
-    }
+    auto channel::ignore(std::int32_t pid) -> void { inner->ignore(pid); }
 
     auto channel::listen() -> ext::task<std::string> {
         assert(inner);
@@ -67,7 +55,5 @@ namespace pg {
         return inner->name();
     }
 
-    auto channel::unignore(std::int32_t pid) -> void {
-        inner->unignore(pid);
-    }
+    auto channel::unignore(std::int32_t pid) -> void { inner->unignore(pid); }
 }

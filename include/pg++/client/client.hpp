@@ -18,11 +18,9 @@ namespace pg {
         auto begin() -> ext::task<transaction>;
 
         template <sql_type... Parameters>
-        requires ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
-        auto exec(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<> {
+        requires((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto exec(std::string_view query, Parameters&&... parameters)
+            -> ext::task<> {
             auto connection = co_await handle.lock();
             co_await connection->exec(
                 query,
@@ -31,7 +29,7 @@ namespace pg {
         }
 
         template <sql_type... Parameters>
-        requires ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto exec_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -44,13 +42,10 @@ namespace pg {
         }
 
         template <typename Result, sql_type... Parameters>
-        requires
-            (composite_type<Result> || from_sql<Result>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
-        auto fetch(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<Result> {
+        requires(composite_type<Result> || from_sql<Result>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto fetch(std::string_view query, Parameters&&... parameters)
+            -> ext::task<Result> {
             auto connection = co_await handle.lock();
             co_return co_await connection->template fetch<Result>(
                 query,
@@ -59,9 +54,8 @@ namespace pg {
         }
 
         template <typename Result, sql_type... Parameters>
-        requires
-            (composite_type<Result> || from_sql<Result>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires(composite_type<Result> || from_sql<Result>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto fetch_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -74,13 +68,10 @@ namespace pg {
         }
 
         template <typename T, sql_type... Parameters>
-        requires
-            (composite_type<T> || from_sql<T>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
-        auto fetch_rows(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<std::vector<T>> {
+        requires(composite_type<T> || from_sql<T>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto fetch_rows(std::string_view query, Parameters&&... parameters)
+            -> ext::task<std::vector<T>> {
             auto connection = co_await handle.lock();
             co_return co_await connection->template fetch_rows<T>(
                 query,
@@ -89,9 +80,8 @@ namespace pg {
         }
 
         template <typename T, sql_type... Parameters>
-        requires
-            (composite_type<T> || from_sql<T>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires(composite_type<T> || from_sql<T>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto fetch_rows_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -103,14 +93,11 @@ namespace pg {
             );
         }
 
-        auto ignore(
-            const std::unordered_set<std::int32_t>& ignored
-        ) noexcept -> void;
+        auto ignore(const std::unordered_set<std::int32_t>& ignored) noexcept
+            -> void;
 
-        auto ignore(
-            const std::string& channel,
-            std::int32_t pid
-        ) noexcept -> void;
+        auto ignore(const std::string& channel, std::int32_t pid) noexcept
+            -> void;
 
         auto listen(const std::string& channel) -> ext::task<pg::channel>;
 
@@ -119,31 +106,25 @@ namespace pg {
         auto on_notice(notice_callback_type&& callback) -> void;
 
         template <typename... Parameters>
-        requires (sql_type<Parameters> && ...) || (sizeof...(Parameters) == 0)
-        auto prepare(
-            std::string_view name,
-            std::string_view query
-        ) -> ext::task<> {
+        requires(sql_type<Parameters> && ...) || (sizeof...(Parameters) == 0)
+        auto prepare(std::string_view name, std::string_view query)
+            -> ext::task<> {
             auto connection = co_await handle.lock();
             co_await connection->template prepare<Parameters...>(name, query);
         }
 
         template <typename T, typename... Args>
-        requires (sql_type<Args> && ...) || (sizeof...(Args) == 0)
-        auto prepare_fn(
-            std::string_view name,
-            auto (T::* fn)(Args...)
-        ) -> ext::task<> {
+        requires(sql_type<Args> && ...) || (sizeof...(Args) == 0)
+        auto prepare_fn(std::string_view name, auto (T::*fn)(Args...))
+            -> ext::task<> {
             auto connection = co_await handle.lock();
             co_await connection->prepare_fn(name, fn);
         }
 
         template <sql_type... Parameters>
-        requires (to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
-        auto query(
-            std::string_view query,
-            Parameters&&... parameters
-        ) -> ext::task<result> {
+        requires(to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
+        auto query(std::string_view query, Parameters&&... parameters)
+            -> ext::task<result> {
             auto connection = co_await handle.lock();
             co_return co_await connection->query(
                 query,
@@ -152,7 +133,7 @@ namespace pg {
         }
 
         template <sql_type... Parameters>
-        requires (to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
+        requires(to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0)
         auto query_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -164,14 +145,12 @@ namespace pg {
             );
         }
 
-        auto simple_query(
-            std::string_view query
-        ) -> ext::task<std::vector<result>>;
+        auto simple_query(std::string_view query)
+            -> ext::task<std::vector<result>>;
 
         template <typename T, sql_type... Parameters>
-        requires
-            (composite_type<T> || from_sql<T>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires(composite_type<T> || from_sql<T>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto stream(
             std::string_view name,
             std::string_view query,
@@ -188,9 +167,8 @@ namespace pg {
         }
 
         template <typename T, sql_type... Parameters>
-        requires
-            (composite_type<T> || from_sql<T>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires(composite_type<T> || from_sql<T>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto stream_prepared(
             std::string_view name,
             std::string_view statement,
@@ -209,13 +187,10 @@ namespace pg {
         }
 
         template <typename Result, sql_type... Parameters>
-        requires
-            (composite_type<Result>|| from_sql<Result>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
-        auto try_fetch(
-            std::string_view query, 
-            Parameters&&... parameters
-        ) -> ext::task<std::optional<Result>> {
+        requires(composite_type<Result> || from_sql<Result>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        auto try_fetch(std::string_view query, Parameters&&... parameters)
+            -> ext::task<std::optional<Result>> {
             auto connection = co_await handle.lock();
             co_return co_await connection->template try_fetch<Result>(
                 query,
@@ -224,9 +199,8 @@ namespace pg {
         }
 
         template <typename Result, sql_type... Parameters>
-        requires
-            (composite_type<Result> || from_sql<Result>) &&
-            ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
+        requires(composite_type<Result> || from_sql<Result>) &&
+                ((to_sql<Parameters> && ...) || (sizeof...(Parameters) == 0))
         auto try_fetch_prepared(
             std::string_view statement,
             Parameters&&... parameters
@@ -240,10 +214,8 @@ namespace pg {
 
         auto unignore() noexcept -> void;
 
-        auto unignore(
-            const std::string& channel,
-            std::int32_t pid
-        ) noexcept -> void;
+        auto unignore(const std::string& channel, std::int32_t pid) noexcept
+            -> void;
 
         auto unlisten() -> ext::task<>;
 

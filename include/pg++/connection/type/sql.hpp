@@ -21,9 +21,7 @@ namespace pg::detail {
                         type::name
                     ));
                 }
-                else {
-                    bad_conversion("type does not support NULL");
-                }
+                else { bad_conversion("type does not support NULL"); }
             }
         }
 
@@ -36,17 +34,13 @@ namespace pg::detail {
     public:
         sql_type(const T& value) : value(value) {}
 
-        auto get() const noexcept -> const T& {
-            return value.get();
-        }
+        auto get() const noexcept -> const T& { return value.get(); }
     };
 
     template <to_sql T>
     struct encoder<sql_type<T>> {
-        static auto encode(
-            sql_type<T> t,
-            netcore::buffered_socket& writer
-        ) -> ext::task<> {
+        static auto encode(sql_type<T> t, netcore::buffered_socket& writer)
+            -> ext::task<> {
             using size_encoder = detail::encoder<std::int32_t>;
 
             const auto& value = t.get();

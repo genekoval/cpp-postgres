@@ -14,8 +14,7 @@ namespace pg::detail {
 
         constexpr auto pg_epoch = January / 1 / 2000;
 
-        constexpr auto time_since_epoch =
-            sys_days(pg_epoch).time_since_epoch();
+        constexpr auto time_since_epoch = sys_days(pg_epoch).time_since_epoch();
 
         return duration_cast<microseconds>(time_since_epoch);
     }();

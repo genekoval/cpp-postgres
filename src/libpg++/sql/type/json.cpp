@@ -12,24 +12,19 @@ namespace pg {
         );
 
         if (version != type<json>::version) {
-            throw bad_conversion(fmt::format(
-                "unsupported jsonb version number {}",
-                version
-            ));
+            throw bad_conversion(
+                fmt::format("unsupported jsonb version number {}", version)
+            );
         }
 
-        const auto string = co_await type<std::string>::from_sql(
-            size - 1,
-            reader
-        );
+        const auto string =
+            co_await type<std::string>::from_sql(size - 1, reader);
 
         co_return json::parse(string);
     }
 
-    auto type<json>::to_sql(
-        const json& j,
-        netcore::buffered_socket& writer
-    ) -> ext::task<> {
+    auto type<json>::to_sql(const json& j, netcore::buffered_socket& writer)
+        -> ext::task<> {
         co_await detail::encoder<char>::encode(version, writer);
 
         const auto string = j.dump();

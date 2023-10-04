@@ -4,8 +4,7 @@ using namespace commline;
 
 namespace {
     namespace internal {
-        auto main(const app& app) -> void {
-        }
+        auto main(const app& app) -> void {}
     }
 }
 

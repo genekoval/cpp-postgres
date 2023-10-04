@@ -18,22 +18,17 @@ namespace pg {
         ) :
             connection(connection),
             name(name),
-            max_rows(max_rows)
-        {
+            max_rows(max_rows) {
             rows.reserve(max_rows);
         }
 
-        explicit operator bool() const noexcept {
-            return !done();
-        }
+        explicit operator bool() const noexcept { return !done(); }
 
         auto command_tag() const noexcept -> std::optional<std::string_view> {
             return tag;
         }
 
-        auto done() const noexcept -> bool {
-            return tag.has_value();
-        }
+        auto done() const noexcept -> bool { return tag.has_value(); }
 
         auto next() -> ext::task<std::span<const T>> {
             rows.clear();
@@ -41,11 +36,8 @@ namespace pg {
 
             auto connection = co_await this->connection->lock();
 
-            tag = co_await connection->execute(
-                name,
-                std::back_inserter(rows),
-                max_rows
-            );
+            tag = co_await connection
+                      ->execute(name, std::back_inserter(rows), max_rows);
 
             if (done()) {
                 co_await connection->close_portal(name);

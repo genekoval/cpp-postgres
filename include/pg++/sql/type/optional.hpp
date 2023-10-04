@@ -33,9 +33,8 @@ namespace pg {
             return std::nullopt;
         }
 
-        static constexpr auto is_null(
-            const std::optional<T>& opt
-        ) noexcept -> bool {
+        static constexpr auto is_null(const std::optional<T>& opt) noexcept
+            -> bool {
             return !opt;
         }
     };

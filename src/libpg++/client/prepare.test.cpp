@@ -8,8 +8,7 @@ namespace {
             AS 'select $1 + $2;'
             LANGUAGE SQL
             IMMUTABLE
-            RETURNS NULL ON NULL INPUT)"
-    );
+            RETURNS NULL ON NULL INPUT)");
 
     class prepare_test {
         std::reference_wrapper<pg::client> client;

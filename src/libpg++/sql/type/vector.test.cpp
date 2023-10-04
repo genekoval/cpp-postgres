@@ -17,7 +17,7 @@ TEST_F(VectorTest, ReadValues) {
 
 TEST_F(VectorTest, WriteValues) {
     run([&]() -> ext::task<> {
-        const auto value = std::vector<std::int16_t> { 1, 2, 3 };
+        const auto value = std::vector<std::int16_t> {1, 2, 3};
 
         const auto result = co_await client->query("SELECT $1", value);
 

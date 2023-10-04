@@ -24,18 +24,17 @@ namespace pg {
 
             const auto dimensions = co_await int32::decode(reader);
 
-            if (dimensions > 1) throw bad_conversion(fmt::format(
-                "invalid number of dimensions: {}", dimensions
-            ));
+            if (dimensions > 1)
+                throw bad_conversion(
+                    fmt::format("invalid number of dimensions: {}", dimensions)
+                );
 
             // read flags
             co_await int32::decode(reader);
             // read element type
             co_await int32::decode(reader);
 
-            if (dimensions == 0) {
-                co_return std::vector<T>();
-            }
+            if (dimensions == 0) { co_return std::vector<T>(); }
 
             const auto len = co_await int32::decode(reader);
 

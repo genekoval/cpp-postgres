@@ -3,9 +3,8 @@
 #include <pg++/connection/type/string.hpp>
 
 namespace pg::detail {
-    auto decoder<notification>::decode(
-        netcore::buffered_socket& reader
-    ) -> ext::task<notification> {
+    auto decoder<notification>::decode(netcore::buffered_socket& reader)
+        -> ext::task<notification> {
         auto notif = notification();
 
         notif.pid = co_await decoder<std::int32_t>::decode(reader);

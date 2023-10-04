@@ -6,9 +6,8 @@
 namespace pg::detail {
     template <>
     struct decoder<std::string> {
-        static auto decode(
-            netcore::buffered_socket& reader
-        ) -> ext::task<std::string>;
+        static auto decode(netcore::buffered_socket& reader)
+            -> ext::task<std::string>;
     };
 
     template <>

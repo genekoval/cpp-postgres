@@ -8,8 +8,7 @@ namespace pg {
             std::forward<std::shared_ptr<netcore::mutex<detail::connection>>>(
                 connection
             )
-        )
-    {}
+        ) {}
 
     auto client::backend_pid() const noexcept -> std::int32_t {
         return handle.get().backend_pid();
@@ -24,16 +23,13 @@ namespace pg {
         co_return transaction(handle.shared());
     }
 
-    auto client::ignore(
-        const std::unordered_set<std::int32_t>& ignored
+    auto client::ignore(const std::unordered_set<std::int32_t>& ignored
     ) noexcept -> void {
         handle.get().ignore(&ignored);
     }
 
-    auto client::ignore(
-        const std::string& channel,
-        std::int32_t pid
-    ) noexcept -> void {
+    auto client::ignore(const std::string& channel, std::int32_t pid) noexcept
+        -> void {
         auto chan = handle.get().find_channel(channel);
         if (chan) chan->ignore(pid);
     }
@@ -61,28 +57,21 @@ namespace pg {
         handle.get().on_notice(std::forward<notice_callback_type>(callback));
     }
 
-    auto client::simple_query(
-        std::string_view query
-    ) -> ext::task<std::vector<result>> {
+    auto client::simple_query(std::string_view query)
+        -> ext::task<std::vector<result>> {
         auto connection = co_await handle.lock();
         co_return co_await connection->simple_query(query);
     }
 
-    auto client::unignore() noexcept -> void {
-        handle.get().ignore(nullptr);
-    }
+    auto client::unignore() noexcept -> void { handle.get().ignore(nullptr); }
 
-    auto client::unignore(
-        const std::string& channel,
-        std::int32_t pid
-    ) noexcept -> void {
+    auto client::unignore(const std::string& channel, std::int32_t pid) noexcept
+        -> void {
         auto chan = handle.get().find_channel(channel);
         if (chan) chan->unignore(pid);
     }
 
-    auto client::unlisten() -> ext::task<> {
-        co_await unlisten("*");
-    }
+    auto client::unlisten() -> ext::task<> { co_await unlisten("*"); }
 
     auto client::unlisten(const std::string& channel) -> ext::task<> {
         auto connection = co_await handle.lock();

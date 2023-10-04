@@ -6,8 +6,8 @@
 
 #include <memory>
 #include <optional>
-#include <vector>
 #include <span>
+#include <vector>
 
 namespace pg::detail {
     class field_data {
@@ -29,9 +29,8 @@ namespace pg::detail {
 
     template <>
     struct decoder<field_data> {
-        static auto decode(
-            netcore::buffered_socket& reader
-        ) -> ext::task<field_data>;
+        static auto decode(netcore::buffered_socket& reader)
+            -> ext::task<field_data>;
     };
 
     static_assert(decodable<field_data>);
@@ -61,16 +60,12 @@ namespace pg {
     public:
         using iterator = std::vector<field>::const_iterator;
 
-        row(
-            std::span<const detail::column> columns,
-            std::vector<field>&& fields
-        );
+        row(std::span<const detail::column> columns,
+            std::vector<field>&& fields);
 
         auto operator[](std::size_t index) const noexcept -> const field&;
 
-        auto operator[](
-            std::string_view name
-        ) const -> const field&;
+        auto operator[](std::string_view name) const -> const field&;
 
         auto begin() const noexcept -> iterator;
 

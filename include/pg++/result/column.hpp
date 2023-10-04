@@ -5,10 +5,7 @@
 #include <string>
 
 namespace pg::detail {
-    enum class format_code : std::int16_t {
-        text,
-        binary
-    };
+    enum class format_code : std::int16_t { text, binary };
 
     struct column {
         std::string name;
@@ -22,9 +19,8 @@ namespace pg::detail {
 
     template <>
     struct decoder<column> {
-        static auto decode(
-            netcore::buffered_socket& reader
-        ) -> ext::task<column>;
+        static auto decode(netcore::buffered_socket& reader)
+            -> ext::task<column>;
     };
 
     static_assert(decodable<column>);

@@ -13,10 +13,8 @@ namespace pg {
             netcore::buffered_socket& reader
         ) -> ext::task<std::int16_t>;
 
-        static auto to_sql(
-            std::int16_t i,
-            netcore::buffered_socket& writer
-        ) -> ext::task<>;
+        static auto to_sql(std::int16_t i, netcore::buffered_socket& writer)
+            -> ext::task<>;
 
         static auto size(std::int16_t i) -> std::int32_t;
     };
@@ -31,10 +29,8 @@ namespace pg {
             netcore::buffered_socket& reader
         ) -> ext::task<std::int32_t>;
 
-        static auto to_sql(
-            std::int32_t i,
-            netcore::buffered_socket& writer
-        ) -> ext::task<>;
+        static auto to_sql(std::int32_t i, netcore::buffered_socket& writer)
+            -> ext::task<>;
 
         static auto size(std::int32_t i) -> std::int32_t;
     };
@@ -49,10 +45,8 @@ namespace pg {
             netcore::buffered_socket& reader
         ) -> ext::task<std::int64_t>;
 
-        static auto to_sql(
-            std::int64_t i,
-            netcore::buffered_socket& writer
-        ) -> ext::task<>;
+        static auto to_sql(std::int64_t i, netcore::buffered_socket& writer)
+            -> ext::task<>;
 
         static auto size(std::int64_t i) -> std::int32_t;
     };

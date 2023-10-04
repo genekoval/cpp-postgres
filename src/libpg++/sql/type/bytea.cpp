@@ -3,28 +3,22 @@
 namespace pg {
     bytea::bytea(std::size_t size) :
         bytes(size == 0 ? nullptr : new std::byte[size]),
-        count(size)
-    {}
+        count(size) {}
 
     bytea::bytea(std::span<const std::byte> bytes) :
         bytes(bytes.empty() ? nullptr : new std::byte[bytes.size()]),
-        count(bytes.size())
-    {
+        count(bytes.size()) {
         if (bytes.empty()) return;
         std::memcpy(this->bytes.get(), bytes.data(), bytes.size());
     }
 
-    auto bytea::data() noexcept -> std::byte* {
-        return bytes.get();
-    }
+    auto bytea::data() noexcept -> std::byte* { return bytes.get(); }
 
     auto bytea::data() const noexcept -> const std::byte* {
         return bytes.get();
     }
 
-    auto bytea::size() const noexcept -> std::size_t {
-        return count;
-    }
+    auto bytea::size() const noexcept -> std::size_t { return count; }
 
     auto bytea::span() noexcept -> std::span<std::byte> {
         return {bytes.get(), count};
@@ -38,7 +32,7 @@ namespace pg {
         std::int32_t size,
         netcore::buffered_socket& reader
     ) -> ext::task<bytea> {
-        auto result = bytea{static_cast<std::size_t>(size)};
+        auto result = bytea {static_cast<std::size_t>(size)};
         co_await reader.read(result.data(), result.size());
         co_return result;
     }
@@ -61,8 +55,7 @@ namespace pg {
         co_await writer.write(bytes.data(), bytes.size());
     }
 
-    auto type<std::span<const std::byte>>::size(
-        std::span<const std::byte> bytes
+    auto type<std::span<const std::byte>>::size(std::span<const std::byte> bytes
     ) -> std::int32_t {
         return bytes.size();
     }

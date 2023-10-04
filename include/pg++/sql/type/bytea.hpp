@@ -34,10 +34,8 @@ namespace pg {
             netcore::buffered_socket& reader
         ) -> ext::task<bytea>;
 
-        static auto to_sql(
-            const bytea& bytea,
-            netcore::buffered_socket& writer
-        ) -> ext::task<>;
+        static auto to_sql(const bytea& bytea, netcore::buffered_socket& writer)
+            -> ext::task<>;
 
         static auto size(const bytea& bytea) -> std::int32_t;
     };

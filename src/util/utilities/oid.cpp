@@ -24,10 +24,7 @@ namespace {
             }
         }
 
-        auto oid(
-            const commline::app& app,
-            std::string_view query
-        ) -> void {
+        auto oid(const commline::app& app, std::string_view query) -> void {
             netcore::run(async(query));
         }
     }
@@ -41,9 +38,7 @@ namespace pg::cmd {
             __FUNCTION__,
             "print field OID",
             options(),
-            arguments(
-                required<std::string_view>("query")
-            ),
+            arguments(required<std::string_view>("query")),
             internal::oid
         );
     }

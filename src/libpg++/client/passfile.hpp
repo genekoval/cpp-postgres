@@ -12,10 +12,8 @@ namespace pg::detail {
         std::string_view username;
     };
 
-    auto passfile(
-        const passfile_fields& fields,
-        std::istream& stream
-    ) -> std::optional<std::string>;
+    auto passfile(const passfile_fields& fields, std::istream& stream)
+        -> std::optional<std::string>;
 
     auto passfile(
         const passfile_fields& fields,

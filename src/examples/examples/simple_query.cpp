@@ -19,9 +19,7 @@ namespace example {
                 fmt::print("\n");
 
                 for (const auto& field : row) {
-                    const auto value = field
-                        .string()
-                        .value_or("[null]");
+                    const auto value = field.string().value_or("[null]");
 
                     fmt::print("{}: {}\n", field.name(), value);
                 }

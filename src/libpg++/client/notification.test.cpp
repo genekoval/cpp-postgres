@@ -34,10 +34,8 @@ protected:
         }
     }
 
-    auto notify(
-        int notifications,
-        std::string_view payload = ""
-    ) -> ext::task<> {
+    auto notify(int notifications, std::string_view payload = "")
+        -> ext::task<> {
         const auto query = fmt::format(
             "NOTIFY {}{}",
             channel_name,
@@ -64,7 +62,7 @@ TEST_F(Notification, Payload) {
 TEST_F(Notification, Ignore) {
     run([&]() -> ext::task<> {
         const auto pid = client->backend_pid();
-        const auto ignored = std::unordered_set<std::int32_t> { pid };
+        const auto ignored = std::unordered_set<std::int32_t> {pid};
 
         co_await listen();
 

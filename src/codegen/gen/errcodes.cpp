@@ -11,9 +11,9 @@ using namespace std::literals;
 
 namespace {
     namespace internal {
-        constexpr auto parse_sqlstate = "auto parse_sqlstate("
-            "std::string_view code"
-        ") -> std::optional<sqlstate>"sv;
+        constexpr auto parse_sqlstate =
+            "auto parse_sqlstate(std::string_view code)"
+            " -> std::optional<sqlstate>"sv;
 
         struct entry {
             std::string code;
@@ -24,10 +24,7 @@ namespace {
             }
         };
 
-        auto read_token(
-            const char** it,
-            const char* end
-        ) -> std::string_view {
+        auto read_token(const char** it, const char* end) -> std::string_view {
             const auto* start = *it;
 
             while (*it != end && !std::isspace(**it)) ++*it;
@@ -48,11 +45,9 @@ namespace {
             for (std::string line; std::getline(stream, line);) {
                 const auto trimmed = ext::trim(line);
 
-                if (
-                    trimmed.empty() ||
-                    trimmed.starts_with('#') ||
-                    trimmed.starts_with("Section")
-                ) continue;
+                if (trimmed.empty() || trimmed.starts_with('#') ||
+                    trimmed.starts_with("Section"))
+                    continue;
 
                 auto it = trimmed.begin();
                 const auto end = trimmed.end();
@@ -74,10 +69,9 @@ namespace {
                     }
                 );
 
-                entries.emplace_back(entry {
-                    .code = std::string(code),
-                    .name = name
-                });
+                entries.emplace_back(
+                    entry {.code = std::string(code), .name = name}
+                );
             }
 
             return entries;
@@ -93,24 +87,17 @@ namespace {
             std::uint8_t level = 0;
         public:
             writer(const fs::path& file) :
-                stream(fmt::output_file(file.native()))
-            {}
+                stream(fmt::output_file(file.native())) {}
 
             auto indent() -> void {
                 if (level > 0) stream.print("{: <{}}", "", level * 4);
             }
 
-            auto level_up() -> void {
-                ++level;
-            }
+            auto level_up() -> void { ++level; }
 
-            auto level_down() -> void {
-                --level;
-            }
+            auto level_down() -> void { --level; }
 
-            auto reset_indent() -> void {
-                level = 0;
-            }
+            auto reset_indent() -> void { level = 0; }
 
             template <typename... Args>
             auto write(
@@ -120,9 +107,7 @@ namespace {
                 stream.print(format_string, std::forward<Args>(args)...);
             }
 
-            auto writeln() -> void {
-                stream.print("\n");
-            }
+            auto writeln() -> void { stream.print("\n"); }
 
             template <typename... Args>
             auto writeln(
@@ -210,7 +195,7 @@ namespace {
             writer.level_up();
             writer.writeln(
                 "const auto map = "
-                    "std::unordered_map<std::string_view, pg::sqlstate> {{"
+                "std::unordered_map<std::string_view, pg::sqlstate> {{"
             );
 
             writer.level_up();
@@ -221,11 +206,7 @@ namespace {
                 const auto& entry = *it;
 
                 writer.indent();
-                writer.write(
-                    "{{\"{}\", {}}}",
-                    entry.code,
-                    entry.name
-                );
+                writer.write("{{\"{}\", {}}}", entry.code, entry.name);
 
                 if (++it != end) writer.write(",\n");
             }
@@ -290,9 +271,7 @@ namespace gen {
                     "errcodes.cpp"
                 )
             ),
-            arguments(
-                required<fs::path>("list")
-            ),
+            arguments(required<fs::path>("list")),
             internal::errcodes
         );
     }

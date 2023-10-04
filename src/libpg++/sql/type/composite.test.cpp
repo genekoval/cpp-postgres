@@ -13,11 +13,7 @@ namespace {
 
 PGCPP_COMPOSITE_DECL(::composite, "composite");
 
-PGCPP_COMPOSITE_DEFINE(
-    ::composite,
-    &::composite::id,
-    &::composite::message
-);
+PGCPP_COMPOSITE_DEFINE(::composite, &::composite::id, &::composite::message);
 
 TEST_F(CompositeTest, ReadComposite) {
     run([&]() -> ext::task<> {
@@ -37,9 +33,8 @@ TEST_F(CompositeTest, ReadRow) {
             "INSERT INTO composite VALUES (42, 'hello');"
         );
 
-        const auto result = co_await client->fetch<composite>(
-            "SELECT * FROM composite"
-        );
+        const auto result =
+            co_await client->fetch<composite>("SELECT * FROM composite");
 
         EXPECT_EQ(42, result.id);
         EXPECT_EQ("hello"sv, result.message);
@@ -52,7 +47,7 @@ TEST_F(CompositeTest, WriteComposite) {
             "CREATE TEMP TABLE composite (id int8, message text)"
         );
 
-        const auto comp = composite { 100, "foobar" };
+        const auto comp = composite {100, "foobar"};
         const auto result = co_await client->query("SELECT $1", comp);
 
         EXPECT_EQ("(100,foobar)"sv, result[0][0].string());

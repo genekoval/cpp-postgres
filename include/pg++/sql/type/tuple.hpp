@@ -6,7 +6,7 @@
 
 namespace pg {
     template <typename... Types>
-    requires ((from_sql<Types> || composite_type<Types>), ...)
+    requires((from_sql<Types> || composite_type<Types>), ...)
     class type<std::tuple<Types...>> {
         template <typename T>
         static auto read_field(

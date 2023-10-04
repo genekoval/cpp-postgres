@@ -18,11 +18,8 @@ TEST_F(Fetch, OneParameter) {
 
 TEST_F(Fetch, MultipleParameters) {
     run([&]() -> ext::task<> {
-        const auto i = co_await client->fetch<std::int32_t>(
-            "SELECT $1 + $2",
-            100,
-            50
-        );
+        const auto i =
+            co_await client->fetch<std::int32_t>("SELECT $1 + $2", 100, 50);
 
         EXPECT_EQ(150, i);
     }());

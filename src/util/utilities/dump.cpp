@@ -14,10 +14,7 @@ namespace {
             fmt::print("{}\n", result);
         }
 
-        auto dump(
-            const commline::app& app,
-            std::string_view query
-        ) -> void {
+        auto dump(const commline::app& app, std::string_view query) -> void {
             netcore::run(async(query));
         }
     }
@@ -31,9 +28,7 @@ namespace pg::cmd {
             __FUNCTION__,
             "dump binary field data",
             options(),
-            arguments(
-                required<std::string_view>("query")
-            ),
+            arguments(required<std::string_view>("query")),
             internal::dump
         );
     }

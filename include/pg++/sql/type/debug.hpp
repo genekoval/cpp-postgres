@@ -12,8 +12,7 @@ namespace pg::debug {
 
         bytes(std::unique_ptr<std::byte[]>&& data, std::size_t size) :
             ptr(std::forward<std::unique_ptr<std::byte[]>>(data)),
-            count(size)
-        {
+            count(size) {
             auto buffer = fmt::memory_buffer();
 
             for (auto i = 0u; i < count; ++i) {
@@ -43,17 +42,11 @@ namespace pg::debug {
             return {ptr.get(), count};
         }
 
-        auto get() const noexcept -> const std::byte* {
-            return ptr.get();
-        }
+        auto get() const noexcept -> const std::byte* { return ptr.get(); }
 
-        auto size() const noexcept -> std::size_t {
-            return count;
-        }
+        auto size() const noexcept -> std::size_t { return count; }
 
-        auto string() const noexcept -> std::string_view {
-            return str;
-        }
+        auto string() const noexcept -> std::string_view { return str; }
     };
 }
 
@@ -81,10 +74,7 @@ struct fmt::formatter<pg::debug::bytes> {
     }
 
     template <typename FormatContext>
-    auto format(
-        const pg::debug::bytes& bytes,
-        FormatContext& ctx
-    ) {
+    auto format(const pg::debug::bytes& bytes, FormatContext& ctx) {
         return fmt::format_to(
             ctx.out(),
             "({:L} byte{}) {}",

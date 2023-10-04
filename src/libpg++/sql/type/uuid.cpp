@@ -23,10 +23,8 @@ namespace pg {
         co_return result;
     }
 
-    auto type<uuid>::to_sql(
-        const uuid& id,
-        netcore::buffered_socket& writer
-    ) -> ext::task<> {
+    auto type<uuid>::to_sql(const uuid& id, netcore::buffered_socket& writer)
+        -> ext::task<> {
         const auto bytes = id.bytes();
         co_await writer.write(bytes.data(), bytes.size());
     }

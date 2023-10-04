@@ -11,10 +11,8 @@ namespace pg::detail {
 
     template <>
     struct encoder<char> {
-        static auto encode(
-            char c,
-            netcore::buffered_socket& writer
-        ) -> ext::task<>;
+        static auto encode(char c, netcore::buffered_socket& writer)
+            -> ext::task<>;
 
         static auto size(char c) -> std::int32_t;
     };

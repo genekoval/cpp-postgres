@@ -17,10 +17,8 @@ namespace pg {
             netcore::buffered_socket& reader
         ) -> ext::task<uuid>;
 
-        static auto to_sql(
-            const uuid& id,
-            netcore::buffered_socket& writer
-        ) -> ext::task<>;
+        static auto to_sql(const uuid& id, netcore::buffered_socket& writer)
+            -> ext::task<>;
 
         static constexpr auto size(const uuid& id) -> std::int32_t {
             return UUID::size;

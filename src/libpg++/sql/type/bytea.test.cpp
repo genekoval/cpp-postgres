@@ -12,7 +12,8 @@ class ByteaTest : public pg::test::TypeTest {
         auto result = pg::result();
 
         run([&]() -> ext::task<> {
-            co_await client->query("CREATE TEMP TABLE bytea_test (bytes bytea)");
+            co_await client->query("CREATE TEMP TABLE bytea_test (bytes bytea)"
+            );
             co_await client->query("INSERT INTO bytea_test VALUES ($1)", t);
 
             result = co_await client->query("SELECT * FROM bytea_test");
@@ -51,19 +52,15 @@ TEST_F(ByteaTest, ConstructByteaSize) {
 
     const auto string = std::string_view {
         reinterpret_cast<const char*>(bytea.data()),
-        bytea.size()
-    };
+        bytea.size()};
 
     EXPECT_EQ(test_string, string);
 }
 
 TEST_F(ByteaTest, ConstructByteaSpan) {
-    const auto bytea = pg::bytea {
-        std::span<const std::byte> {
-            reinterpret_cast<const std::byte*>(test_string.data()),
-            test_string.size()
-        }
-    };
+    const auto bytea = pg::bytea {std::span<const std::byte> {
+        reinterpret_cast<const std::byte*>(test_string.data()),
+        test_string.size()}};
 
     ASSERT_EQ(test_string.size(), bytea.size());
 
@@ -110,9 +107,8 @@ TEST_F(ByteaTest, ReadBytea) {
 
 TEST_F(ByteaTest, ReadByteaEmpty) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client->fetch<pg::bytea>(
-            R"(SELECT ''::bytea)"
-        );
+        const auto result =
+            co_await client->fetch<pg::bytea>(R"(SELECT ''::bytea)");
 
         EXPECT_EQ(0, result.size());
         EXPECT_EQ(nullptr, result.data());
@@ -120,25 +116,19 @@ TEST_F(ByteaTest, ReadByteaEmpty) {
 }
 
 TEST_F(ByteaTest, WriteBytea) {
-    const auto bytea = pg::bytea{
-        std::span<const std::byte> {
-            reinterpret_cast<const std::byte*>(test_string.data()),
-            test_string.size()
-        }
-    };
+    const auto bytea = pg::bytea {std::span<const std::byte> {
+        reinterpret_cast<const std::byte*>(test_string.data()),
+        test_string.size()}};
 
     test_write(bytea);
 }
 
-TEST_F(ByteaTest, WriteByteaEmpty) {
-    test_empty_write(pg::bytea());
-}
+TEST_F(ByteaTest, WriteByteaEmpty) { test_empty_write(pg::bytea()); }
 
 TEST_F(ByteaTest, WriteSpan) {
     const auto bytes = std::span<const std::byte> {
         reinterpret_cast<const std::byte*>(test_string.data()),
-        test_string.size()
-    };
+        test_string.size()};
 
     test_write(bytes);
 }

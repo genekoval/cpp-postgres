@@ -16,10 +16,9 @@ namespace {
 
 TEST_F(JsonTest, Read) {
     run([&]() -> ext::task<> {
-        const auto result = co_await client->fetch<pg::json>(fmt::format(
-            "SELECT '{}'::jsonb",
-            json
-        ));
+        const auto result = co_await client->fetch<pg::json>(
+            fmt::format("SELECT '{}'::jsonb", json)
+        );
 
         expect_equal(result);
     }());

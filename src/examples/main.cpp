@@ -16,13 +16,10 @@ namespace {
             example_fn function;
         };
 
-        constexpr auto examples = std::array {
-            entry {
-                "simple",
-                "Simple text queries with multiple commands per query",
-                example::simple_query
-            }
-        };
+        constexpr auto examples = std::array {entry {
+            "simple",
+            "Simple text queries with multiple commands per query",
+            example::simple_query}};
 
         auto print_examples() -> void {
             fmt::print("The following examples are available:\n");
@@ -37,10 +34,8 @@ namespace {
             co_await example(client);
         }
 
-        auto main(
-            const app& app,
-            std::optional<std::string_view> example
-        ) -> void {
+        auto main(const app& app, std::optional<std::string_view> example)
+            -> void {
             if (!example) {
                 print_examples();
                 return;
@@ -57,10 +52,9 @@ namespace {
             );
 
             if (result == examples.end()) {
-                throw std::runtime_error(fmt::format(
-                    "example '{}' does not exist",
-                    name
-                ));
+                throw std::runtime_error(
+                    fmt::format("example '{}' does not exist", name)
+                );
             }
 
             netcore::run(async_main(result->function));
@@ -79,9 +73,7 @@ auto main(int argc, char** argv) -> int {
         "0.0.0",
         "pg++ examples",
         options(),
-        arguments(
-            optional<std::string_view>("example")
-        ),
+        arguments(optional<std::string_view>("example")),
         internal::main
     );
 

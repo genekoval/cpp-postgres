@@ -6,10 +6,10 @@ using TupleTest = pg::test::TypeTest;
 
 TEST_F(TupleTest, ReadComposite) {
     run([&]() -> ext::task<> {
-        const auto tuple = co_await client->fetch<std::tuple<
-            std::string,
-            std::int64_t
-        >>("SELECT ROW('hello'::text, 80::int8)");
+        const auto tuple =
+            co_await client->fetch<std::tuple<std::string, std::int64_t>>(
+                "SELECT ROW('hello'::text, 80::int8)"
+            );
 
         EXPECT_EQ("hello"sv, std::get<0>(tuple));
         EXPECT_EQ(std::int64_t(80), std::get<1>(tuple));
@@ -23,11 +23,11 @@ TEST_F(TupleTest, ReadRow) {
             "INSERT INTO tuple_test VALUES (50, 100, 'hello');"
         );
 
-        const auto row = co_await client->fetch<std::tuple<
-            std::int32_t,
-            std::int16_t,
-            std::string
-        >>("SELECT * FROM tuple_test");
+        const auto row =
+            co_await client
+                ->fetch<std::tuple<std::int32_t, std::int16_t, std::string>>(
+                    "SELECT * FROM tuple_test"
+                );
 
         EXPECT_EQ(50, std::get<0>(row));
         EXPECT_EQ(100, std::get<1>(row));

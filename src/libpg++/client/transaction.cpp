@@ -11,11 +11,7 @@ namespace {
             TIMBER_DEBUG("{} rollback transaction", *connection);
         }
         catch (const std::exception& ex) {
-            TIMBER_ERROR(
-                "{} rollback failed: {}",
-                handle->get(),
-                ex.what()
-            );
+            TIMBER_ERROR("{} rollback failed: {}", handle->get(), ex.what());
         }
         catch (...) {
             TIMBER_ERROR("{} rollback failed", handle->get());
@@ -26,13 +22,11 @@ namespace {
 namespace pg {
     transaction::transaction(handle_t&& connection) :
         handle(std::forward<handle_t>(connection)),
-        open(true)
-    {}
+        open(true) {}
 
     transaction::transaction(transaction&& other) :
         handle(std::move(other.handle)),
-        open(std::exchange(other.open, false))
-    {}
+        open(std::exchange(other.open, false)) {}
 
     transaction::~transaction() {
         if (handle && open) ::rollback(std::move(handle));

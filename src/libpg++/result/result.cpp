@@ -10,33 +10,22 @@ namespace pg {
     ) :
         tag(tag),
         columns(std::forward<std::vector<detail::column>>(columns)),
-        rows(std::forward<std::vector<row>>(rows))
-    {}
+        rows(std::forward<std::vector<row>>(rows)) {}
 
-    auto result::operator[](
-        std::size_t index
-    ) const noexcept -> const row& {
+    auto result::operator[](std::size_t index) const noexcept -> const row& {
         assert(index < rows.size());
         return rows[index];
     }
 
-    auto result::begin() const noexcept -> iterator {
-        return rows.begin();
-    }
+    auto result::begin() const noexcept -> iterator { return rows.begin(); }
 
     auto result::command_tag() const noexcept -> std::string_view {
         return tag;
     }
 
-    auto result::empty() const noexcept -> bool {
-        return rows.empty();
-    }
+    auto result::empty() const noexcept -> bool { return rows.empty(); }
 
-    auto result::end() const noexcept -> iterator {
-        return rows.end();
-    }
+    auto result::end() const noexcept -> iterator { return rows.end(); }
 
-    auto result::size() const noexcept -> std::size_t {
-        return rows.size();
-    }
+    auto result::size() const noexcept -> std::size_t { return rows.size(); }
 }

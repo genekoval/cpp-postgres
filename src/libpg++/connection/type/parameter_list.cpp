@@ -13,9 +13,8 @@ namespace pg::detail {
         }
     }
 
-    auto encoder<parameter_list>::size(
-        const parameter_list& parameters
-    ) -> std::int32_t {
+    auto encoder<parameter_list>::size(const parameter_list& parameters)
+        -> std::int32_t {
         std::int32_t sum = 0;
 
         for (const auto& [key, value] : parameters) {

@@ -6,9 +6,8 @@ using SimpleQuery = pg::test::ClientTest;
 
 TEST_F(SimpleQuery, OneStatement) {
     run([&]() -> ext::task<> {
-        const auto results = co_await client->simple_query(
-            "SELECT 2 + 2 AS sum"
-        );
+        const auto results =
+            co_await client->simple_query("SELECT 2 + 2 AS sum");
 
         EXPECT_EQ(1, results.size());
 

@@ -3,11 +3,7 @@
 using namespace std::literals;
 
 namespace {
-    enum class mood {
-        sad,
-        ok,
-        happy
-    };
+    enum class mood { sad, ok, happy };
 }
 
 template <>
@@ -18,15 +14,15 @@ struct pg::enum_type<mood> {
         static const auto mapping = std::unordered_map<std::string_view, mood> {
             {"sad", sad},
             {"ok", ok},
-            {"happy", happy}
-        };
+            {"happy", happy}};
 
         const auto it = mapping.find(string);
 
-        if (it == mapping.end()) throw bad_conversion(fmt::format(
-            R"(received invalid value for enum mood: "{}")",
-            string
-        ));
+        if (it == mapping.end())
+            throw bad_conversion(fmt::format(
+                R"(received invalid value for enum mood: "{}")",
+                string
+            ));
 
         return it->second;
     }
@@ -53,10 +49,9 @@ class EnumTest : public pg::test::TypeTest {
         auto result = mood::sad;
 
         run([&]() -> ext::task<> {
-            result = co_await client->fetch<mood>(fmt::format(
-                "SELECT '{}'::mood",
-                value
-            ));
+            result = co_await client->fetch<mood>(
+                fmt::format("SELECT '{}'::mood", value)
+            );
         }());
 
         return result;
@@ -69,7 +64,7 @@ class EnumTest : public pg::test::TypeTest {
             result = co_await client->query("SELECT $1", m);
         }());
 
-        return std::string{result[0][0].string().value()};
+        return std::string {result[0][0].string().value()};
     }
 protected:
     static auto SetUpTestSuite() -> void {
