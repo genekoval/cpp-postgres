@@ -1,6 +1,6 @@
+/*build
+.cache
+compile_commands.json
+CMakeUserPresets.json
 .env
-bin
-obj
-lib
-
-*.gen.*
+*.gen.hpp

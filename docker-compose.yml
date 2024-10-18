@@ -1,0 +1,20 @@
+services:
+  pgtest:
+    build: .
+    environment:
+      PGHOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: pgtest
+      POSTGRES_DATABASE: pgtest
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: pg_isready -d pgtest -U pgtest
+      interval: 10s
+      timeout: 10s
+      retries: 5

@@ -19,7 +19,8 @@ namespace {
         constexpr auto examples = std::array {entry {
             "simple",
             "Simple text queries with multiple commands per query",
-            example::simple_query}};
+            example::simple_query
+        }};
 
         auto print_examples() -> void {
             fmt::print("The following examples are available:\n");
@@ -70,7 +71,7 @@ auto main(int argc, char** argv) -> int {
 
     auto app = application(
         "examples",
-        "0.0.0",
+        VERSION,
         "pg++ examples",
         options(),
         arguments(optional<std::string_view>("example")),

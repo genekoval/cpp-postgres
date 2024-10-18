@@ -22,7 +22,7 @@ auto main(int argc, char** argv) -> int {
 
     auto app = application(
         "util",
-        "0.0.0",
+        VERSION,
         "pg++ utilities",
         options(),
         arguments(),

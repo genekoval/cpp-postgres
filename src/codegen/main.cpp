@@ -16,9 +16,9 @@ auto main(int argc, char** argv) -> int {
     std::locale::global(std::locale(""));
 
     auto app = application(
-        NAME,
+        "codegen",
         VERSION,
-        DESCRIPTION,
+        "pg++ source code generation tool",
         options(),
         arguments(),
         internal::main
